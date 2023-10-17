@@ -7,11 +7,17 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 
+# ensure that the config file exists
 if os.path.exists('config.json'):
+
+    # open and set the json file into a dict
     json_file = open('config.json')
     json_dict = json.load(json_file)
+    
+    # we extract the token from config
     TOKEN = json_dict['token']
 
+    # Error
     if not TOKEN:
         print('Theres no token in config.json')
         sys.exit(1)
