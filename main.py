@@ -1,11 +1,15 @@
-import discord, json, sys
+import discord, json, sys, random
 import os.path
+
+from discord.ext import commands
 
 TOKEN = None
 intents = discord.Intents.default()
+intents.members = True
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+# create the bot instance with prefix and intenst so far
+bot = commands.Bot(command_prefix='f!', intents=intents)
 
 # ensure that the config file exists
 if os.path.exists('config.json'):
@@ -25,16 +29,21 @@ if os.path.exists('config.json'):
     json_file.close()
 
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f'We have logged in as {client.user}')
+    print(f'We have logged in as {bot.user}')
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+# roll command
+# gives a random number from 1 to 1000
+@bot.command(name='roll') 
+async def roll(ctx):
+    await ctx.send(random.randint(1, 100))
+
+# choose command
+# picks randomly a given item
+@bot.command(name='choose') 
+async def choose(ctx, *choices: str):
+    await ctx.send(f'You should pick {random.choice(choices)}')
     
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
 
-client.run(TOKEN)
+bot.run(TOKEN)
