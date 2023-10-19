@@ -10,8 +10,8 @@ class Basic(commands.Cog):
     # roll command
     # gives a random number from 1 to 1000
     @commands.command(name='roll') 
-    async def roll(self, ctx):
-        await ctx.send(random.randint(1, 100))
+    async def roll(self, ctx, *, member: discord.Member):
+        await ctx.send(f'{member.mention} rolls {random.randint(1, 100)}')
 
     # choose command
     # picks randomly a given item
