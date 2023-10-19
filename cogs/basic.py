@@ -15,9 +15,20 @@ class Basic(commands.Cog):
 
     # choose command
     # picks randomly a given item
-    @commands.command(name='arepa') 
+    @commands.command(name='choose') 
     async def choose(self, ctx, *choices: str):
         await ctx.send(f'You should pick {random.choice(choices)}')
+
+    @commands.command()
+    async def rate(self, ctx, *choices: str):
+        if not choices or len(choices) == 1 and choices[0] == 'chileanway':
+            return await ctx.send('Give me something to rate')
+
+        if choices[0] == 'chileanway':
+            return await ctx.send(f'{random.randint(1, 7)}/7')
+
+        return await ctx.send(f'{random.randint(1, 10)}/10')
+            
 
 
 async def setup(bot):
