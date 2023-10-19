@@ -10,17 +10,17 @@ class Basic(commands.Cog):
     # roll command
     # gives a random number from 1 to 1000
     @commands.command(name='roll') 
-    async def roll(self, ctx, *, member: discord.Member):
-        await ctx.send(f'🎲 {member.mention} rolls {random.randint(1, 100)}')
+    async def roll(self, ctx):
+        await ctx.send(f'🎲 {ctx.message.author.mention} rolls {random.randint(1, 100)}')
 
     # choose command
     # picks randomly a given item
     @commands.command(name='choose') 
     async def choose(self, ctx, *choices: str):
         if not choices or len(choices) < 2:
-            return ctx.send('Give me two or more things to pick')
+            return await ctx.send('Give me two or more things to pick')
         
-        await ctx.send(f'You should pick {random.choice(choices)}')
+        await ctx.send(f'You should pick `{random.choice(choices)}`')
 
     @commands.command()
     async def rate(self, ctx, *choices: str):
