@@ -3,6 +3,7 @@ import pathlib, sys, os.path, json
 BASE_DIR = pathlib.Path(__file__).parent
 
 COMMANDS_DIR = BASE_DIR / 'commands'
+COGS_DIR = BASE_DIR / 'cogs'
 
 TOKEN = None
 

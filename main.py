@@ -19,14 +19,15 @@ def main():
     async def on_ready():
         print(f'We have logged in as {bot.user}')
 
-        await bot.load_extension("cogs.basic")
+        for cog_file in settings.COGS_DIR.glob('*.py'):
+            if cog_file != "__init__.py":
+                await bot.load_extension(f'cogs.{cog_file.name[:-3]}')
 
     @bot.event
     async def on_member_join(member: discord.member):
         channel = member.guild.system_channel
         if channel is not None:
             await channel.send(f'Welcome aboard {member.mention}')
-        
 
     bot.run(settings.TOKEN)
 
