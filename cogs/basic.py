@@ -51,8 +51,39 @@ class Basic(commands.Cog):
                 user = await self.bot.fetch_user(mention)
                 avatar = user.display_avatar.url
 
-                await ctx.send(avatar)      
+                await ctx.send(avatar)
     
+
+    @commands.command(name='poll')
+    async def poll(self, ctx, *args):
+        options = args
+        letters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯'];
+
+        if len(args) <= 2: return ctx.send('Add more choices please! (maximun 10)')
+        if len(args) > 11: return ctx.send('You added to much choices, please use the maximun: **10**')
+
+        await ctx.message.delete(delay=1)
+
+        poll = {
+            'question': options[0],
+            'options': options[1:]
+        }
+        
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = ''
+        )
+
+        embed.set_author(name=poll['question'])
+
+        for index, option in enumerate(poll['options']):
+            embed.description += f'{letters[index]}** - {option}**\n'
+
+        embed_sent = await ctx.send(content=f'@everyone heeeey!\n<@!{ctx.author.id}> has started a poll: **{poll["question"]}**', embed=embed)
+
+        for index in range(len(poll['options'])):
+            await embed_sent.add_reaction(letters[index])
+        
 
 async def setup(bot):
     await bot.add_cog(Basic(bot))
