@@ -25,7 +25,12 @@ class Basic(commands.Cog):
         if not choices or len(choices) < 2:
             return await ctx.send('Give me two or more things to pick')
         
-        await ctx.send(f'You should pick `{random.choice(choices)}`')
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'You should pick `{random.choice(choices)}` ☝🏻'
+        )
+
+        await ctx.send(embed=embed)
 
     # rate command
     # rates something you give to the bot
