@@ -61,11 +61,17 @@ class Basic(commands.Cog):
         user = None
         avatar = None
 
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = ''
+        )
+
         # if the user does not mention anyone, return its own info
         if not ctx.message.mentions:
             user = await self.bot.fetch_user(ctx.author.id)
             avatar = user.display_avatar.url
-            await ctx.send(avatar)
+            embed.set_image(url=avatar)
+            await ctx.send(embed=embed)
             await ctx.send('If you wanted to see other people profile picture try: f!avatar @username. Add more mentions if u want to see more pictures at once.')
         
         else:
@@ -73,8 +79,8 @@ class Basic(commands.Cog):
             for mention in mentions:
                 user = await self.bot.fetch_user(mention)
                 avatar = user.display_avatar.url
-
-                await ctx.send(avatar)
+                embed.set_image(url=avatar)
+                await ctx.send(embed=embed)
     
     # poll command
     # creates a command with a max number of 12 options
