@@ -23,6 +23,7 @@ def main():
             if cog_file != "__init__.py":
                 await bot.load_extension(f'cogs.{cog_file.name[:-3]}')
 
+
     @bot.event
     async def on_member_join(member: discord.member):
         channel = member.guild.system_channel
