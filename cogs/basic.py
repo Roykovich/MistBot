@@ -11,7 +11,12 @@ class Basic(commands.Cog):
     # gives a random number from 1 to 1000
     @commands.command(name='roll') 
     async def roll(self, ctx):
-        await ctx.send(f'🎲 {ctx.message.author.mention} rolls {random.randint(1, 100)}')
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'🎲 {ctx.message.author.mention} rolls `{random.randint(1, 100)}`!'
+        )
+        await ctx.send(embed=embed)
+
 
     # choose command
     # picks randomly a given item
@@ -22,6 +27,8 @@ class Basic(commands.Cog):
         
         await ctx.send(f'You should pick `{random.choice(choices)}`')
 
+    # rate command
+    # rates something you give to the bot
     @commands.command(name='rate')
     async def rate(self, ctx, *choices: str):
         if not choices or len(choices) == 1 and choices[0] == 'chileanway':
@@ -32,7 +39,8 @@ class Basic(commands.Cog):
 
         return await ctx.send(f'{random.randint(1, 10)}/10')
     
-    
+    # avatar command
+    # it returns the avatar of a mentioned user, if no mention returns the author's avatar
     @commands.command(name='avatar')
     async def info(self, ctx):
         user = None
@@ -53,7 +61,8 @@ class Basic(commands.Cog):
 
                 await ctx.send(avatar)
     
-
+    # poll command
+    # creates a command with a max number of 12 options
     @commands.command(name='poll')
     async def poll(self, ctx, *args):
         options = args
