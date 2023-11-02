@@ -6,6 +6,7 @@ import settings
 
 # My cogs
 from cogs.basic import Basic
+from cogs.music import Music
 
 def main():
     intents = discord.Intents.default()
