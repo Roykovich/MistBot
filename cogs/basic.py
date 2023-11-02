@@ -38,12 +38,22 @@ class Basic(commands.Cog):
     async def rate(self, ctx, *choices: str):
         if not choices or len(choices) == 1 and choices[0] == 'chileanway':
             return await ctx.send('Give me something to rate')
+        
+        random_int = None
 
         if choices[0] == 'chileanway':
-            return await ctx.send(f'{random.randint(1, 7)}/7')
+            random_int = f'{random.randint(1, 7)}/7'
+        else:
+            random_int = f'{random.randint(1, 10)}/10'
 
-        return await ctx.send(f'{random.randint(1, 10)}/10')
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'Hmmm I give it a `{random_int}`'
+        )
+
+        return await ctx.send(embed=embed)
     
+
     # avatar command
     # it returns the avatar of a mentioned user, if no mention returns the author's avatar
     @commands.command(name='avatar')
