@@ -3,3 +3,5 @@ config.json
 /bot-env
 **/__pycache__/
 *.pyc
+/lavalink/*
+docker-compose.music.yml
