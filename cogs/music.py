@@ -30,10 +30,10 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEventPayload):
-        await self.music_channel.send(f'`{payload.track.title}` has finished')
+        # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
-            self.vc.queue.clear()
-            await self.vc.stop()
+            self.vc.queue.reset()
+            await self.vc.disconnect()
             await self.music_channel.send(f'The playlist has ended, lemme know if u want to listen to more music')
 
 
@@ -69,10 +69,10 @@ class Music(commands.Cog):
 
         # Checks if the bot is already connected to a voicechat
         # if so, the query result is push it to the player queue (or playlist)
-        if self.vc:
-            # this appends the track to the queue
+        if self.vc and self.vc.is_connected():
+            # this appends the new track to the queue
             self.vc.queue(track)
-            await self.music_channel.send(f'`{track.track.title}` has been added to the queue.')
+            await self.music_channel.send(f'`{track.title}` has been added to the queue.')
             return
 
         # We create the player and connect it to the voicechat
