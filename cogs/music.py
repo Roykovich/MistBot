@@ -87,6 +87,15 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         await self.vc.disconnect()
 
+    @commands.command(name='skip')
+    async def skip(self, ctx):
+
+        if self.vc.queue.is_empty:
+            await ctx.send(f'That was the last song')
+            await self.vc.disconnect()
+
+        next_track = await self.vc.queue.get_wait()
+        await self.vc.play(next_track, populate=False)
     
     @commands.command(name='pause')
     async def pause(self, ctx):
