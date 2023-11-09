@@ -77,12 +77,10 @@ class Music(commands.Cog):
 
         # We create the player and connect it to the voicechat
         self.vc = await channel.connect(cls=wavelink.Player)
-        # esto te indica si despues de terminar una cancion busca otra del queue o no,
-        # pero estas haciedno pruebas si en false no crea una auto_queue que busca
-        # canciones recomendadas del anterior query
+        # sets the attribute that make the player start the next track on when the current track ends
         self.vc.autoplay = True
 
-        await self.vc.play(track)
+        await self.vc.play(track, populate=False)
 
     
     @commands.command(name='disconnect')
