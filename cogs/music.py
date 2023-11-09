@@ -103,7 +103,17 @@ class Music(commands.Cog):
 
     @commands.command(name='queue')
     async def queue(self, ctx):
+
+        if not self.vc or self.vc.queue.is_empty:
+            ctx.send(f'There\'s no playlist')
+
         print(self.vc.queue)
+        queue = ''
+
+        for track in self.vc.queue:
+            queue += f'- {track} \n'
+
+        await ctx.send(f'{queue}')
     
 
 async def setup(bot):
