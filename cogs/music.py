@@ -4,6 +4,13 @@ import wavelink
 
 from settings import MUSIC_PASS as lavalink_password
 
+def format_time(milliseconds):
+    hours = milliseconds // 3600000
+    minutes = (milliseconds % 3600000) // 60000
+    seconds = ((milliseconds % 3600000) % 60000) / 1000
+
+    return f'{hours}:{minutes:02d}:{seconds:.0f}'
+
 class Music(commands.Cog):
     vc : wavelink.Player = None
     music_channel = None
@@ -26,7 +33,19 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackEventPayload):
         track = payload.track
-        await self.music_channel.send(f'`{track.title}` started playing with a duration of {track.length / 1000} seconds')
+        duration = format_time(track.length)
+        thumbnail = await payload.original.fetch_thumbnail()
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'[{track.title}]({track.uri})'
+        )
+
+        embed.set_author(name='🎵| Suena')
+        embed.add_field(name='Duración', value=f'`{duration}`', inline=True)
+        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
+        embed.set_thumbnail(url=thumbnail)
+
+        await self.music_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEventPayload):
