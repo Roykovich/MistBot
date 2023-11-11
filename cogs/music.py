@@ -93,13 +93,14 @@ class Music(commands.Cog):
         if self.vc.queue.is_empty:
             await ctx.send(f'That was the last song')
             await self.vc.disconnect()
+            return
 
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
     
     @commands.command(name='pause')
-    async def pause(self, ctx):
-        await self.vc.pause()
+    async def pause(self, ctx, a=1, b=2 ,c=3):
+        print(a, b, c)
 
     @commands.command(name='resume')
     async def resume(self, ctx):
@@ -110,11 +111,12 @@ class Music(commands.Cog):
     async def stop(self, ctx):
         await self.vc.stop()
 
-    @commands.command(name='queue')
-    async def queue(self, ctx):
+    @commands.command(name='playlist')
+    async def playlist(self, ctx):
 
         if not self.vc or self.vc.queue.is_empty:
-            ctx.send(f'There\'s no playlist')
+            await ctx.send(f'There\'s no playlist')
+            return 
 
         print(self.vc.queue)
         queue = ''
@@ -123,7 +125,20 @@ class Music(commands.Cog):
             queue += f'- {track} \n'
 
         await ctx.send(f'{queue}')
+
+    # ! añadir controlador para decir que pasa del tiempo de la cancion y esto provocara skipearla
+    # ! agregar a eso la cantidad de segundos restantes 
+    @commands.command(name='ff')
+    async def ff(self, ctx, seconds:int = 15):
+        new_position = self.vc.position + (seconds * 1000)
+        await self.vc.seek(new_position)
     
+    # ! añadir controlador para decir que pasa del tiempo de la cancion y esto provocara skipearla
+    # ! agregar a eso la cantidad de segundos restantes 
+    @commands.command(name='gb')
+    async def gb(self, ctx, seconds:int = 15):
+        new_position = self.vc.position - (seconds * 1000)
+        await self.vc.seek(new_position)
 
 async def setup(bot):
     music_bot = Music(bot)
