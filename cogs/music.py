@@ -40,7 +40,7 @@ class Music(commands.Cog):
             description = f'[{track.title}]({track.uri})'
         )
 
-        embed.set_author(name='🎵| Suena')
+        embed.set_author(name='🎵 | Suena')
         embed.add_field(name='Duración', value=f'`{duration}`', inline=True)
         embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
         embed.set_thumbnail(url=thumbnail)
@@ -51,9 +51,15 @@ class Music(commands.Cog):
     async def on_wavelink_track_end(self, payload: wavelink.TrackEventPayload):
         # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
+            channel = self.vc.channel.mention
+            embed = discord.Embed(
+                colour = discord.Colour.dark_purple(),
+                description = f'🎛 The playlist has ended and bot has been disconnected from {channel}'
+            )
+
             self.vc.queue.reset()
             await self.vc.disconnect()
-            await self.music_channel.send(f'The playlist has ended, lemme know if u want to listen to more music')
+            await self.music_channel.send(embed=embed)
 
 
     ######################
@@ -63,7 +69,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *title : str):
         # ensures the user provides a query
         if not title:
-            await ctx.send(f'Use the command as f!play <your query here>')
+            await ctx.send(f'Use the command as `f!play <your query here>`')
             return
 
         # Assigns a channel to send info about the player
@@ -72,7 +78,7 @@ class Music(commands.Cog):
 
         # checks if the user is connected to a voicechat
         if not channel:
-            await ctx.send(f'You need to join a voice channel first')
+            await ctx.send(f'**Join a voice channel!**')
             return
 
         # Makes a youtube search of the query provided by the user
@@ -80,7 +86,7 @@ class Music(commands.Cog):
         
         # Checks if the query does not return something
         if not tracks:
-            await ctx.send(f'No tracks found with query: `{" ".join(title)}`')
+            await ctx.send(f'No tracks found with query: `{" ".join(title)}`.')
             return
         
         # This is the first result of the query
