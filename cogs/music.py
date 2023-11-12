@@ -33,7 +33,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackEventPayload):
         track = payload.track
-        duration = format_time(track.length)
+        duration = format_time(track.length) if not track.is_stream else '🎙 live'
         thumbnail = await payload.original.fetch_thumbnail()
         embed = discord.Embed(
             colour = discord.Colour.dark_purple(),
@@ -164,6 +164,41 @@ class Music(commands.Cog):
     async def gb(self, ctx, seconds:int = 15):
         new_position = self.vc.position - (seconds * 1000)
         await self.vc.seek(new_position)
+
+    # Agregar arguments para elegir que si lofi girl, lofi boy 
+    # y 1 o 2 curated playlist de lofi para coding
+    @commands.command(name='lofi')
+    async def lofi(self, ctx):
+        # Assigns a channel to send info about the player
+        LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
+        self.music_channel = ctx.message.channel
+        channel = ctx.message.author.voice.channel
+
+        # checks if the user is connected to a voicechat
+        if not channel:
+            await ctx.send(f'**Join a voice channel!**')
+            return
+        
+        # aqui dberias hacer un condicional para los argumentos de los distintos
+        # tipos de lofi
+        tracks = await wavelink.YouTubeTrack.search(LOFI_GIRL)
+        
+        # Checks if the query does not return something
+        if not tracks:
+            await ctx.send(f'If you are reading this, it means that something happened to the links of the streams or the playlist')
+            return
+
+        track = tracks[0]
+
+        if self.vc and self.vc.is_connected():
+            # aqui crear un condicional para ver si se mata
+            # la playlist actual en el caso de que exista
+            return
+        
+        self.vc = await channel.connect(cls=wavelink.Player)
+        self.vc.autoplay = False
+
+        await self.vc.play(track, populate=False)
 
 async def setup(bot):
     music_bot = Music(bot)
