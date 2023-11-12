@@ -4,6 +4,12 @@ import wavelink
 
 from settings import MUSIC_PASS as lavalink_password
 
+LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
+LOFI_BOY = 'https://www.youtube.com/watch?v=4xDzrJKXOOY'
+LOFI_NATE = 'https://www.youtube.com/watch?v=UokZMBmnUGM'
+LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc&t=8974s'
+LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
+
 def format_time(milliseconds):
     hours = milliseconds // 3600000
     minutes = (milliseconds % 3600000) // 60000
@@ -168,9 +174,21 @@ class Music(commands.Cog):
     # Agregar arguments para elegir que si lofi girl, lofi boy 
     # y 1 o 2 curated playlist de lofi para coding
     @commands.command(name='lofi')
-    async def lofi(self, ctx):
+    async def lofi(self, ctx, lofi:str = LOFI_GIRL):
+        lofi_search = None
+        if lofi:
+            if lofi == 'boy':
+                lofi_search = LOFI_BOY
+            elif lofi == 'nate':
+                lofi_search = LOFI_NATE
+            elif lofi == 'nate2':
+                lofi_search =  LOFI_2_NATE
+            elif lofi == 'midu':
+                lofi_search = LOFI_MIDU
+            else:
+                lofi_search = LOFI_GIRL
+
         # Assigns a channel to send info about the player
-        LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
         self.music_channel = ctx.message.channel
         channel = ctx.message.author.voice.channel
 
@@ -181,7 +199,7 @@ class Music(commands.Cog):
         
         # aqui dberias hacer un condicional para los argumentos de los distintos
         # tipos de lofi
-        tracks = await wavelink.YouTubeTrack.search(LOFI_GIRL)
+        tracks = await wavelink.YouTubeTrack.search(lofi_search)
         
         # Checks if the query does not return something
         if not tracks:
