@@ -21,17 +21,27 @@ def format_time(milliseconds):
 # ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
 # ! para poder manejar su estado
 
+# ! Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
+
 class MusicView(discord.ui.View):
     paused : bool = False
 
+    # Stops the Player if the ❌ is clicked
     @discord.ui.button(label='❌')
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # stops Player
         await self.vc.stop()
+        # Remove the items of the view
         self.clear_items()
+        # edits the message of the interaction given
         await interaction.response.edit_message(view=self)
 
+    # Pauses the Player if the ⏸ is clicked
+    # When clicked the butto is updated to this ▶️ in order to create
+    # user experience
     @discord.ui.button(label='⏸')
     async def pause_toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # flow of the current state of the Player
         if not self.paused:
             await self.vc.pause()
             self.children[1].label = '▶️'
@@ -43,8 +53,10 @@ class MusicView(discord.ui.View):
 
         await interaction.response.edit_message(view=self)
 
+    # Skips the Player to the next Track in the Queue when clicked
     @discord.ui.button(label='⏭️')
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # if Queue is empty disonnects the bot and remove the children of the View
         if self.vc.queue.is_empty:
             await interaction.response.send_message(f'That was the last song')
             await self.vc.disconnect()
@@ -52,13 +64,16 @@ class MusicView(discord.ui.View):
                 item.disabled = True
             await interaction.response.edit_message(view=self)
             return
-
+        
+        # If Queue has tracks it skips the current Track to the next one in Queue
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
+
         self.clear_items()
         await interaction.response.edit_message(view=self)
 
 class LofiView(discord.ui.View):
+    # When clicked the lofi is added to the Queue
     @discord.ui.button(label='Add', style=discord.ButtonStyle.success)
     async def add(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = interaction.message.embeds[0]
@@ -67,6 +82,7 @@ class LofiView(discord.ui.View):
         self.clear_items()
         await interaction.response.edit_message(embed=embed, view=self)
 
+    # When clicked the Player clear its Queue and plays the lofi instead
     @discord.ui.button(label='Remove', style=discord.ButtonStyle.danger)
     async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         embed = interaction.message.embeds[0]
@@ -282,6 +298,7 @@ class Music(commands.Cog):
             message = await self.music_channel.send(embed=embed, view=view)
             view.vc = self.vc
             view.track = track
+            
             await view.wait()
             await message.delete(delay=10)
             return
