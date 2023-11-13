@@ -15,7 +15,7 @@ def format_time(milliseconds):
     minutes = (milliseconds % 3600000) // 60000
     seconds = ((milliseconds % 3600000) % 60000) / 1000
 
-    return f'{hours}:{minutes:02d}:{seconds:.0f}'
+    return f'{"0" if hours < 10 else ""}{str(hours) + ":" if hours > 0 else ""}{minutes:02d}:{"0" if seconds < 10 else ""}{seconds:.0f}'
 
 # ! Agregar el view a una variable de la cog para evitar que los comandos
 # ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
@@ -147,10 +147,10 @@ class Music(commands.Cog):
 
         # Assigns a channel to send info about the player
         self.music_channel = ctx.message.channel
-        channel = ctx.message.author.voice.channel
+        voice = ctx.message.author.voice
 
         # checks if the user is connected to a voicechat
-        if not channel:
+        if not voice:
             await ctx.send(f'**Join a voice channel!**')
             return
 
@@ -174,7 +174,7 @@ class Music(commands.Cog):
             return
 
         # We create the player and connect it to the voicechat
-        self.vc = await channel.connect(cls=wavelink.Player)
+        self.vc = await voice.channel.connect(cls=wavelink.Player)
         # sets the attribute that make the player start the next track on when the current track ends
         self.vc.autoplay = True
 
@@ -254,10 +254,10 @@ class Music(commands.Cog):
 
         # Assigns a channel to send info about the player
         self.music_channel = ctx.message.channel
-        channel = ctx.message.author.voice.channel
+        voice = ctx.message.author.voice
 
         # checks if the user is connected to a voicechat
-        if not channel:
+        if not voice:
             await ctx.send(f'**Join a voice channel!**')
             return
         
@@ -286,7 +286,7 @@ class Music(commands.Cog):
             await message.delete(delay=10)
             return
         
-        self.vc = await channel.connect(cls=wavelink.Player)
+        self.vc = await voice.channel.connect(cls=wavelink.Player)
         self.vc.autoplay = False
 
         await self.vc.play(track, populate=False)
