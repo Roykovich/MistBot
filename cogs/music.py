@@ -17,6 +17,15 @@ def format_time(milliseconds):
 
     return f'{"0" if hours < 10 else ""}{str(hours) + ":" if hours > 0 else ""}{minutes:02d}:{"0" if seconds < 10 else ""}{seconds:.0f}'
 
+def embed_generator(description):
+    embed = discord.Embed(
+        colour = discord.Colour.dark_purple(),
+        description = description
+    )
+
+    return embed
+
+
 # ! Agregar el view a una variable de la cog para evitar que los comandos
 # ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
 # ! para poder manejar su estado
@@ -58,7 +67,7 @@ class MusicView(discord.ui.View):
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if Queue is empty disonnects the bot and remove the children of the View
         if self.vc.queue.is_empty:
-            await interaction.response.send_message(f'That was the last song')
+            await interaction.response.send_message(embed=embed_generator(f'That was the last song'))
             await self.vc.disconnect()
             for item in self.children:
                 item.disabled = True
@@ -141,14 +150,9 @@ class Music(commands.Cog):
         # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
             channel = self.vc.channel.mention
-            embed = discord.Embed(
-                colour = discord.Colour.dark_purple(),
-                description = f'🎛 The playlist has ended and bot has been disconnected from {channel}'
-            )
-
             self.vc.queue.reset()
             await self.vc.disconnect()
-            await self.music_channel.send(embed=embed)
+            await self.music_channel.send(embed=embed_generator(f'🎛 The playlist has ended and bot has been disconnected from {channel}'))
 
 
     ######################
@@ -158,7 +162,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *title : str):
         # ensures the user provides a query
         if not title:
-            await ctx.send(f'Use the command as `f!play <your query here>`')
+            await ctx.send(embed=embed_generator(f'Use the command as `f!play <your query here>`'))
             return
 
         # Assigns a channel to send info about the player
@@ -167,7 +171,7 @@ class Music(commands.Cog):
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await ctx.send(f'**Join a voice channel!**')
+            await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
 
         # Makes a youtube search of the query provided by the user
@@ -175,7 +179,7 @@ class Music(commands.Cog):
         
         # Checks if the query does not return something
         if not tracks:
-            await ctx.send(f'No tracks found with query: `{" ".join(title)}`.')
+            await ctx.send(embed=embed_generator(f'No tracks found with query: `{" ".join(title)}`.'))
             return
         
         # This is the first result of the query
@@ -186,7 +190,8 @@ class Music(commands.Cog):
         if self.vc and self.vc.is_connected():
             # this appends the new track to the queue
             self.vc.queue(track)
-            await self.music_channel.send(f'`{track.title}` has been added to the queue.')
+            message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` has been added to the queue.'))
+            await message.delete(delay=5)
             return
 
         # We create the player and connect it to the voicechat
@@ -200,10 +205,10 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         await self.vc.disconnect()
 
-    @commands.command(name='skip')
+    @commands.command(name='skip', aliases=['next'])
     async def skip(self, ctx):
         if self.vc.queue.is_empty:
-            await ctx.send(f'That was the last song')
+            await ctx.send(embed=embed_generator(f'That was the last song'))
             await self.vc.disconnect()
             return
 
@@ -226,7 +231,7 @@ class Music(commands.Cog):
     async def playlist(self, ctx):
 
         if not self.vc or self.vc.queue.is_empty:
-            await ctx.send(f'There\'s no playlist')
+            await ctx.send(embed=embed_generator(f'There\'s no playlist'))
             return 
 
         print(self.vc.queue)
@@ -274,7 +279,7 @@ class Music(commands.Cog):
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await ctx.send(f'**Join a voice channel!**')
+            await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
         
         # aqui dberias hacer un condicional para los argumentos de los distintos
@@ -289,18 +294,14 @@ class Music(commands.Cog):
         track = tracks[0]
 
         if self.vc and self.vc.is_connected():
-            embed = discord.Embed(
-                colour = discord.Colour.dark_purple(),
-                description = f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'
-            )
             view = LofiView(timeout=15)
             # this appends the new track to the queue
-            message = await self.music_channel.send(embed=embed, view=view)
+            message = await self.music_channel.send(embed=embed_generator(f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'), view=view)
             view.vc = self.vc
             view.track = track
-            
+
             await view.wait()
-            await message.delete(delay=10)
+            await message.delete(delay=5)
             return
         
         self.vc = await voice.channel.connect(cls=wavelink.Player)
