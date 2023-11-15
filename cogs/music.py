@@ -1,14 +1,20 @@
 import discord
-from discord.ext import commands
 import wavelink
+import re
+from discord.ext import commands
+from wavelink.ext import spotify
 
 from settings import MUSIC_PASS as lavalink_password
+from settings import SPOTIFY_ID as spotify_id
+from settings import SPOTIFY_SECRET as spotify_secret
 
 LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
 LOFI_BOY = 'https://www.youtube.com/watch?v=4xDzrJKXOOY'
 LOFI_NATE = 'https://www.youtube.com/watch?v=UokZMBmnUGM'
 LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc&t=8974s'
 LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
+
+SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
 
 def format_time(milliseconds):
     hours = milliseconds // 3600000
@@ -30,7 +36,12 @@ def embed_generator(description):
 # ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
 # ! para poder manejar su estado
 
-# ! Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
+# ? Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
+
+# ? Agregar botones de fast forward y go back al view
+# ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
+# ? soporte de spotify y soundcloud
+
 
 class MusicView(discord.ui.View):
     paused : bool = False
@@ -110,8 +121,13 @@ class Music(commands.Cog):
 
     # We create the node to listen to the lavalink server
     async def setup(self):
+        spotify_client =  spotify.SpotifyClient(
+            client_id=spotify_id,
+            client_secret=spotify_secret
+        )
+
         node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password=lavalink_password)
-        await wavelink.NodePool.connect(client=self.bot, nodes=[node])
+        await wavelink.NodePool.connect(client=self.bot, nodes=[node], spotify=spotify_client)
 
     ######################
     #       EVENTS       #
@@ -164,6 +180,13 @@ class Music(commands.Cog):
         if not title:
             await ctx.send(embed=embed_generator(f'Use the command as `f!play <your query here>`'))
             return
+        
+        # Set the tuple query into a string, usefull for spotify and youtube
+        query = " ".join(title)
+        # If theres no spotify link in the query it returns an empty list
+        spotify_query = re.findall(SPOTIFY_REGEX, query)
+        tracks = None
+
 
         # Assigns a channel to send info about the player
         self.music_channel = ctx.message.channel
@@ -174,12 +197,34 @@ class Music(commands.Cog):
             await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
 
-        # Makes a youtube search of the query provided by the user
-        tracks = await wavelink.YouTubeTrack.search(" ".join(title))
+        # ? tambien agregar un condicional antes de hacer el flujo condicional de si es youtube soundcloud o spotify
+        # ? EN la docu en enums sale el spotifysearchtype para tracks, albums y playlist
+        # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
+        if spotify_query:
+            # Looks for the first URL match
+            payload = spotify.decode_url(spotify_query[0])
+
+            # Checks if the query is an album or a playlist
+            if payload.type == spotify.SpotifySearchType.playlist or spotify.SpotifySearchType.album:
+                # async for track in spotify.SpotifyTrack.iterator(query=spotify_query[0]):
+                #     print(track)
+
+                # ? crear condicional abajo para agregar playlist a la queue de alguna forma
+                # ? pensar y ver en la linea 235
+                tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=spotify_query[0])
+                print(tracks)
+            else:
+                tracks = await spotify.SpotifyTrack.search(query=spotify_query[0])
+                
+        else:
+            # ? Hacemos que por default si no es de spotify
+            # ? (o soundcloud cuando lo implemente)
+            # ? Makes a youtube search of the query provided by the user
+            tracks = await wavelink.YouTubeTrack.search(query)
         
         # Checks if the query does not return something
         if not tracks:
-            await ctx.send(embed=embed_generator(f'No tracks found with query: `{" ".join(title)}`.'))
+            await ctx.send(embed=embed_generator(f'No tracks found with query: `{query}`.'))
             return
         
         # This is the first result of the query
