@@ -7,6 +7,8 @@ COGS_DIR = BASE_DIR / 'cogs'
 
 TOKEN = None
 MUSIC_PASS = None
+SPOTIFY_ID = None
+SPOTIFY_SECRET = None
 
 # ensure that the config file exists
 if os.path.exists('config.json'):
@@ -29,5 +31,18 @@ if os.path.exists('config.json'):
     if not MUSIC_PASS:
         print('Theres no lavalink password in config.json')
         sys.exit(1)
+
+    SPOTIFY_ID = json_dict['spotify_id']
+
+    if not SPOTIFY_ID:
+        print('Theres no spotfy id in config.json')
+        sys.exit(1)
+
+    SPOTIFY_SECRET = json_dict['spotify_secret']
+
+    if not SPOTIFY_SECRET:
+        print('Theres no spotify secret in config.json')
+        sys.exit(1)
+    
     
     json_file.close()
