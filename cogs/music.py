@@ -38,14 +38,18 @@ def embed_generator(description):
 # ! para poder manejar su estado
 
 # ? Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
-
-# ? Agregar botones de fast forward y go back al view
 # ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
-# ? soporte de spotify y soundcloud
-
+# ? soporte de zoundcloud
 
 class MusicView(discord.ui.View):
     paused : bool = False
+
+    # rewind 15 seconds of the track
+    @discord.ui.button(label='⏪')
+    async def rewind(self, interaction: discord.Interaction, button: discord.ui.Button):
+        new_position = self.vc.position - (15 * 1000)
+        await self.vc.seek(new_position)
+        await interaction.response.edit_message(view=self)
 
     # Stops the Player if the ⏹️ is clicked
     @discord.ui.button(label='⏹️')
@@ -92,6 +96,13 @@ class MusicView(discord.ui.View):
         await self.vc.play(next_track, populate=False)
 
         self.clear_items()
+        await interaction.response.edit_message(view=self)
+    
+    # fast forward 15 seconds of the track
+    @discord.ui.button(label='⏩')
+    async def fast_forward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        new_position = self.vc.position + (15 * 1000)
+        await self.vc.seek(new_position)
         await interaction.response.edit_message(view=self)
 
 class LofiView(discord.ui.View):
