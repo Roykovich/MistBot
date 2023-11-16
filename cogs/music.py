@@ -47,10 +47,11 @@ def embed_generator(description):
 class MusicView(discord.ui.View):
     paused : bool = False
 
-    # Stops the Player if the ❌ is clicked
-    @discord.ui.button(label='❌')
+    # Stops the Player if the ⏹️ is clicked
+    @discord.ui.button(label='⏹️')
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         # stops Player
+        self.vc.queue.clear()
         await self.vc.stop()
         # Remove the items of the view
         self.clear_items()
@@ -302,6 +303,7 @@ class Music(commands.Cog):
 
     @commands.command(name='stop')
     async def stop(self, ctx):
+        self.vc.queue.clear()
         await self.vc.stop()
 
     @commands.command(name='playlist')
@@ -333,8 +335,6 @@ class Music(commands.Cog):
         new_position = self.vc.position - (seconds * 1000)
         await self.vc.seek(new_position)
 
-    # Agregar arguments para elegir que si lofi girl, lofi boy 
-    # y 1 o 2 curated playlist de lofi para coding
     @commands.command(name='lofi')
     async def lofi(self, ctx, lofi:str = LOFI_GIRL):
         lofi_search = None
