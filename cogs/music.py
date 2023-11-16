@@ -15,6 +15,7 @@ LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc&t=8974s'
 LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
 
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
+YOUTUBE_PLAYLIST_REGEX = r"^https://www.youtube.com/playlist\?list=[A-Za-z0-9=?]+"
 
 def format_time(milliseconds):
     hours = milliseconds // 3600000
@@ -163,6 +164,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEventPayload):
+        print(payload.reason)
         # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
             channel = self.vc.channel.mention
@@ -185,8 +187,14 @@ class Music(commands.Cog):
         query = " ".join(title)
         # If theres no spotify link in the query it returns an empty list
         spotify_query = re.findall(SPOTIFY_REGEX, query)
+        # If theres no youtube playlist link in the query it returns an empty list
+        youtube_playlist_query = re.findall(YOUTUBE_PLAYLIST_REGEX, query)
+        # stores tracks if they are found
         tracks = None
-
+        # Boolean switch
+        playlist = False
+        # in case theres an album or playlist given by the user we store the title here
+        playlist_title = ''
 
         # Assigns a channel to send info about the player
         self.music_channel = ctx.message.channel
@@ -197,47 +205,57 @@ class Music(commands.Cog):
             await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
 
-        # ? tambien agregar un condicional antes de hacer el flujo condicional de si es youtube soundcloud o spotify
-        # ? EN la docu en enums sale el spotifysearchtype para tracks, albums y playlist
         # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
         if spotify_query:
             # Looks for the first URL match
             payload = spotify.decode_url(spotify_query[0])
-
             # Checks if the query is an album or a playlist
             if payload.type == spotify.SpotifySearchType.playlist or spotify.SpotifySearchType.album:
-                # async for track in spotify.SpotifyTrack.iterator(query=spotify_query[0]):
-                #     print(track)
-
-                # ? crear condicional abajo para agregar playlist a la queue de alguna forma
-                # ? pensar y ver en la linea 235
+                # stores in form of a list the current Playables from the playlist or album
                 tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=spotify_query[0])
-                print(tracks)
+                playlist_title = tracks[0].album
+                playlist = True
             else:
+                # Makes a spotify search of the query provided by the user
                 tracks = await spotify.SpotifyTrack.search(query=spotify_query[0])
-                
+        # We check if the query url is a youtube playlist
+        elif youtube_playlist_query:
+            tracks = await wavelink.YouTubePlaylist.search(youtube_playlist_query[0])
+            playlist_title = tracks.name
+            playlist = True
+
         else:
-            # ? Hacemos que por default si no es de spotify
-            # ? (o soundcloud cuando lo implemente)
-            # ? Makes a youtube search of the query provided by the user
+            # Makes a youtube search of the query provided by the user
             tracks = await wavelink.YouTubeTrack.search(query)
         
         # Checks if the query does not return something
         if not tracks:
             await ctx.send(embed=embed_generator(f'No tracks found with query: `{query}`.'))
             return
-        
-        # This is the first result of the query
-        track = tracks[0]
+
+        track = tracks.tracks[0] if youtube_playlist_query else tracks[0]
 
         # Checks if the bot is already connected to a voicechat
         # if so, the query result is push it to the player queue (or playlist)
         if self.vc and self.vc.is_connected():
-            # this appends the new track to the queue
-            self.vc.queue(track)
-            message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` has been added to the queue.'))
-            await message.delete(delay=5)
-            return
+            if playlist:
+                if youtube_playlist_query:
+                    for track in tracks.tracks:
+                        self.vc.queue(track)
+                    message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                    await message.delete(delay=5)
+                    return
+                elif spotify_query:
+                    for track in tracks:
+                        self.vc.queue(track)
+                    message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                    await message.delete(delay=5)
+                    return
+            else:
+                self.vc.queue(track)
+                message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` has been added to the queue.'))
+                await message.delete(delay=5)
+                return
 
         # We create the player and connect it to the voicechat
         self.vc = await voice.channel.connect(cls=wavelink.Player)
@@ -245,6 +263,20 @@ class Music(commands.Cog):
         self.vc.autoplay = True
 
         await self.vc.play(track, populate=False)
+
+        if playlist:
+            if youtube_playlist_query:
+                for track in tracks.tracks[1:]:
+                    self.vc.queue(track)
+                message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                await message.delete(delay=5)
+                return
+            elif spotify_query:
+                for track in tracks[1:]:
+                    self.vc.queue(track)
+                message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                await message.delete(delay=5)
+                return
 
     @commands.command(name='disconnect')
     async def disconnect(self, ctx):
