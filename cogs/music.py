@@ -102,7 +102,7 @@ class MusicView(discord.ui.View):
             await self.vc.disconnect()
             self.clear_items()
             await interaction.response.edit_message(view=self)
-            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended Bot disconnected from {channel} 👋'))
+            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended. Bot disconnected from {channel} 👋'))
             return
         
         # If Queue has tracks it skips the current Track to the next one in Queue
@@ -200,7 +200,7 @@ class Music(commands.Cog):
             channel = self.vc.channel.mention
             self.vc.queue.reset()
             await self.vc.disconnect()
-            await self.music_channel.send(embed=embed_generator(f'🎼 Playlist has ended\nBot disconnected from {channel} 👋'))
+            await self.music_channel.send(embed=embed_generator(f'🎼 Playlist has ended. Bot disconnected from {channel} 👋'))
         
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
@@ -360,22 +360,18 @@ class Music(commands.Cog):
 
         await ctx.send(f'{queue}')
 
-    # ! añadir controlador para decir que pasa del tiempo de la cancion y esto provocara skipearla
-    # ! agregar a eso la cantidad de segundos restantes 
     @commands.command(name='ff')
     async def ff(self, ctx, seconds:int = 15):
         new_position = self.vc.position + (seconds * 1000)
         await self.vc.seek(new_position)
     
-    # ! añadir controlador para decir que pasa del tiempo de la cancion y esto provocara skipearla
-    # ! agregar a eso la cantidad de segundos restantes 
     @commands.command(name='gb')
     async def gb(self, ctx, seconds:int = 15):
         new_position = self.vc.position - (seconds * 1000)
         await self.vc.seek(new_position)
 
     @commands.command(name='lofi')
-    async def lofi(self, ctx, choose:str = LOFI_GIRL):
+    async def lofi(self, ctx, choose:str = 'girl'):
         # lofi_search = None
         
         # match lofi:
