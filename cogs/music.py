@@ -369,16 +369,17 @@ class Music(commands.Cog):
     @commands.command(name='lofi')
     async def lofi(self, ctx, lofi:str = LOFI_GIRL):
         lofi_search = None
-        if lofi:
-            if lofi == 'boy':
+        
+        match lofi:
+            case 'boy':
                 lofi_search = LOFI_BOY
-            elif lofi == 'nate':
+            case 'nate':
                 lofi_search = LOFI_NATE
-            elif lofi == 'nate2':
+            case 'nate2':
                 lofi_search =  LOFI_2_NATE
-            elif lofi == 'midu':
+            case 'midu':
                 lofi_search = LOFI_MIDU
-            else:
+            case _:
                 lofi_search = LOFI_GIRL
 
         # Assigns a channel to send info about the player
