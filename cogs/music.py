@@ -337,7 +337,7 @@ class Music(commands.Cog):
         await ctx.message.delete(delay=1)
         await self.vc.stop()
 
-    @commands.command(name='playlist')
+    @commands.command(name='playlist', aliases=['queue'])
     async def playlist(self, ctx):
 
         if not self.vc or self.vc.queue.is_empty:
