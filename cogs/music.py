@@ -15,7 +15,7 @@ LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc&t=8974s'
 LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
 
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
-YOUTUBE_PLAYLIST_REGEX = r"^https://www.youtube.com/playlist\?list=[A-Za-z0-9=?]+"
+YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/youtube\.com\/playlist\?list\=[A-Za-z0-9-_]+(?:&si\=)[A-Za-z0-9-_]+)"
 
 def format_time(milliseconds):
     hours = milliseconds // 3600000
