@@ -52,6 +52,7 @@ class MusicView(discord.ui.View):
     # rewind 15 seconds of the track
     @discord.ui.button(label='⏪')
     async def rewind(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # self.vc.position are milliseconds, thats why need 15 times 1000
         new_position = self.vc.position - (15 * 1000)
         await self.vc.seek(new_position)
         await interaction.response.edit_message(view=self)
@@ -93,7 +94,7 @@ class MusicView(discord.ui.View):
             await self.vc.disconnect()
             self.clear_items()
             await interaction.response.edit_message(view=self)
-            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended\nBot disconnected from {channel} 👋'))
+            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended Bot disconnected from {channel} 👋'))
             return
         
         # If Queue has tracks it skips the current Track to the next one in Queue
@@ -106,6 +107,7 @@ class MusicView(discord.ui.View):
     # fast forward 15 seconds of the track
     @discord.ui.button(label='⏩')
     async def fast_forward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # self.vc.position are milliseconds, thats why need 15 times 1000
         new_position = self.vc.position + (15 * 1000)
         await self.vc.seek(new_position)
         await interaction.response.edit_message(view=self)
