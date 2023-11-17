@@ -390,7 +390,11 @@ class Music(commands.Cog):
         #     case _:
         #         lofi_search = LOFI_GIRL
 
+        # returns a list of the keys from LOFIS constant
         lofis = list(LOFIS.keys())
+        # uses list comprehesion to lookup for values inside the lofis list
+        # if the choose input from the user is inside the key list it will
+        # return an array with the current key provided by the user
         lofi_search = [lofi for lofi in lofis if choose.lower() in lofi]
 
         # Assigns a channel to send info about the player
@@ -402,6 +406,8 @@ class Music(commands.Cog):
             await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
         
+        # using lofi_search list if is empty uses the default girl lofi or if the input is not in the list
+        # if is in the list, it plays the url in LOFIS constant dict
         tracks = await wavelink.YouTubeTrack.search(LOFIS['girl'] if not lofi_search else LOFIS[lofi_search[0]])
         
         # Checks if the query does not return something
@@ -412,7 +418,7 @@ class Music(commands.Cog):
         track = tracks[0]
 
         if self.vc and self.vc.is_connected():
-            view = LofiView(timeout=15)
+            view = LofiView(timeout=10)
             # this appends the new track to the queue
             message = await self.music_channel.send(embed=embed_generator(f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'), view=view)
             view.vc = self.vc
