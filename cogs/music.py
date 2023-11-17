@@ -32,10 +32,15 @@ def embed_generator(description):
 
     return embed
 
+def remove_all_items(view):
+    for item in view.children:
+        view.remove_item(item)
+
 
 # ! Agregar el view a una variable de la cog para evitar que los comandos
 # ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
 # ! para poder manejar su estado
+# * HECHO
 
 # ? Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
 # ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
@@ -65,7 +70,7 @@ class MusicView(discord.ui.View):
     # Pauses the Player if the ⏸ is clicked
     # When clicked the butto is updated to this ▶️ in order to create
     # user experience
-    @discord.ui.button(label='⏸')
+    @discord.ui.button(label='⏸️')
     async def pause_toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
         # flow of the current state of the Player
         if not self.paused:
@@ -84,11 +89,11 @@ class MusicView(discord.ui.View):
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if Queue is empty disonnects the bot and remove the children of the View
         if self.vc.queue.is_empty:
-            await interaction.response.send_message(embed=embed_generator(f'That was the last song'))
+            channel = self.vc.channel.mention
             await self.vc.disconnect()
-            for item in self.children:
-                item.disabled = True
+            self.clear_items()
             await interaction.response.edit_message(view=self)
+            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended\nBot disconnected from {channel} 👋'))
             return
         
         # If Queue has tracks it skips the current Track to the next one in Queue
@@ -128,6 +133,8 @@ class LofiView(discord.ui.View):
 class Music(commands.Cog):
     vc : wavelink.Player = None
     music_channel = None
+    view = None
+    view_message = None
     
     def __init__(self, bot):
         self.bot = bot
@@ -152,7 +159,6 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackEventPayload):
         track = payload.track
-        
         # check if the track is a stream or not
         duration = format_time(track.length) if not track.is_stream else '🎙 live'\
         # fetchs thumbnail
@@ -171,8 +177,10 @@ class Music(commands.Cog):
         view_timeout = track.length / 1000 if not track.is_stream else None 
         view = MusicView(timeout=view_timeout)
 
-        await self.music_channel.send(embed=embed, view=view)
+        view_message = await self.music_channel.send(embed=embed, view=view)
         view.vc = self.vc
+        self.view_message = view_message
+        self.view = view
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEventPayload):
@@ -182,8 +190,10 @@ class Music(commands.Cog):
             channel = self.vc.channel.mention
             self.vc.queue.reset()
             await self.vc.disconnect()
-            await self.music_channel.send(embed=embed_generator(f'🎛 The playlist has ended and bot has been disconnected from {channel}'))
-
+            await self.music_channel.send(embed=embed_generator(f'🎼 Playlist has ended\nBot disconnected from {channel} 👋'))
+        
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
 
     ######################
     #      COMMANDS      #
@@ -296,25 +306,33 @@ class Music(commands.Cog):
 
     @commands.command(name='skip', aliases=['next'])
     async def skip(self, ctx):
-        if self.vc.queue.is_empty:
-            await ctx.send(embed=embed_generator(f'That was the last song'))
-            await self.vc.disconnect()
+        if self.vc.queue.is_empty and not self.vc.is_connected():
+            await ctx.send(embed=embed_generator(f'There is no playlist'))
             return
-
+        
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
     
     @commands.command(name='pause')
     async def pause(self, ctx):
         await self.vc.pause()
+        await ctx.message.delete(delay=1)
+        self.view.children[2].label = "▶️"
+        await self.view_message.edit(view=self.view)
 
     @commands.command(name='resume')
     async def resume(self, ctx):
         await self.vc.resume()
+        await ctx.message.delete(delay=1)
+        self.view.children[2].label = "⏸️"
+        await self.view_message.edit(view=self.view)
 
     @commands.command(name='stop')
     async def stop(self, ctx):
         self.vc.queue.clear()
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
+        await ctx.message.delete(delay=1)
         await self.vc.stop()
 
     @commands.command(name='playlist')
