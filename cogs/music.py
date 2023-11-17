@@ -8,11 +8,19 @@ from settings import MUSIC_PASS as lavalink_password
 from settings import SPOTIFY_ID as spotify_id
 from settings import SPOTIFY_SECRET as spotify_secret
 
-LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
-LOFI_BOY = 'https://www.youtube.com/watch?v=4xDzrJKXOOY'
-LOFI_NATE = 'https://www.youtube.com/watch?v=UokZMBmnUGM'
-LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc&t=8974s'
-LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
+# LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
+# LOFI_BOY = 'https://www.youtube.com/watch?v=4xDzrJKXOOY'
+# LOFI_NATE = 'https://www.youtube.com/watch?v=UokZMBmnUGM'
+# LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc'
+# LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
+
+LOFIS = {
+    'girl': 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
+    'boy': 'https://www.youtube.com/watch?v=4xDzrJKXOOY',
+    'nate': 'https://www.youtube.com/watch?v=UokZMBmnUGM',
+    'nate2': 'https://www.youtube.com/watch?v=0ucdLWYhdAc',
+    'midu': 'https://www.youtube.com/watch?v=p0OH206z9Wg'
+}
 
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
 YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/youtube\.com\/playlist\?list\=[A-Za-z0-9-_]+(?:&si\=)[A-Za-z0-9-_]+)"
@@ -367,20 +375,23 @@ class Music(commands.Cog):
         await self.vc.seek(new_position)
 
     @commands.command(name='lofi')
-    async def lofi(self, ctx, lofi:str = LOFI_GIRL):
-        lofi_search = None
+    async def lofi(self, ctx, choose:str = LOFI_GIRL):
+        # lofi_search = None
         
-        match lofi:
-            case 'boy':
-                lofi_search = LOFI_BOY
-            case 'nate':
-                lofi_search = LOFI_NATE
-            case 'nate2':
-                lofi_search =  LOFI_2_NATE
-            case 'midu':
-                lofi_search = LOFI_MIDU
-            case _:
-                lofi_search = LOFI_GIRL
+        # match lofi:
+        #     case 'boy':
+        #         lofi_search = LOFI_BOY
+        #     case 'nate':
+        #         lofi_search = LOFI_NATE
+        #     case 'nate2':
+        #         lofi_search =  LOFI_2_NATE
+        #     case 'midu':
+        #         lofi_search = LOFI_MIDU
+        #     case _:
+        #         lofi_search = LOFI_GIRL
+
+        lofis = list(LOFIS.keys())
+        lofi_search = [lofi for lofi in lofis if choose.lower() in lofi]
 
         # Assigns a channel to send info about the player
         self.music_channel = ctx.message.channel
@@ -391,9 +402,7 @@ class Music(commands.Cog):
             await ctx.send(embed=embed_generator(f'Join a voice channel!'))
             return
         
-        # aqui dberias hacer un condicional para los argumentos de los distintos
-        # tipos de lofi
-        tracks = await wavelink.YouTubeTrack.search(lofi_search)
+        tracks = await wavelink.YouTubeTrack.search(LOFIS['girl'] if not lofi_search else LOFIS[lofi_search[0]])
         
         # Checks if the query does not return something
         if not tracks:
