@@ -53,7 +53,7 @@ def remove_all_items(view):
 # ! para poder manejar su estado
 # * HECHO
 
-# ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
+# * funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
 # ! soporte de soundcloud
 # * añadir documentacion a las funciones de arriba
 # ? cambiar los iconos de los botones por palabras como el bot kena
@@ -382,6 +382,29 @@ class Music(commands.Cog):
     async def gb(self, ctx, seconds:int = 15):
         new_position = self.vc.position - (seconds * 1000)
         await self.vc.seek(new_position)
+
+    @commands.command(name='current')
+    async def current(self, ctx):
+        if not self.vc or not self.vc.is_connected():
+            await ctx.send(embed=embed_generator(f'No playlist'))
+            return
+        
+        track = self.vc.current
+        current_position = format_time(int(self.vc.position))
+        duration = format_time(track.length) if not track.is_stream else '🎙 live'
+        thumbnail = await track.fetch_thumbnail()
+
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'[{track.title}]({track.uri})'
+        )
+        embed.set_author(name='🎵 | Suena')
+        embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
+        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
+        embed.set_thumbnail(url=thumbnail)
+
+        message = await ctx.send(embed=embed)
+        await message.delete(delay=10)
 
     @commands.command(name='lofi')
     async def lofi(self, ctx, choose:str = 'girl'):
