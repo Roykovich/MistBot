@@ -50,7 +50,6 @@ def remove_all_items(view):
 # ! para poder manejar su estado
 # * HECHO
 
-# ? Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
 # ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
 # ! soporte de soundcloud
 # ? añadir documentacion a las funciones de arriba
@@ -87,17 +86,17 @@ class MusicView(discord.ui.View):
         # flow of the current state of the Player
         if not self.paused:
             await self.vc.pause()
-            self.children[1].label = '▶️'
+            self.children[2].label = '▶️'
             self.paused = True
         else:
             await self.vc.resume()
-            self.children[1].label = '⏸'
+            self.children[2].label = '⏸'
             self.paused = False
 
         await interaction.response.edit_message(view=self)
 
     # Skips the Player to the next Track in the Queue when clicked
-    @discord.ui.button(label='⏭️')
+    @discord.ui.button(label='➡️')
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if Queue is empty disonnects the bot and remove the children of the View
         if self.vc.queue.is_empty:
