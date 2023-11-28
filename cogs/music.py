@@ -23,7 +23,7 @@ LOFIS = {
 }
 
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
-YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/youtube\.com\/playlist\?list\=[A-Za-z0-9-_]+(?:&si\=)[A-Za-z0-9-_]+)"
+YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?:com|be)\/(?:playlist)*[A-Za-z0-9-_]*\?list\=[A-Za-z0-9-_]+(?:&si\=)*[A-Za-z0-9-_]+)"
 
 def format_time(milliseconds):
     hours = milliseconds // 3600000
@@ -52,7 +52,10 @@ def remove_all_items(view):
 
 # ? Agregar una funcion para cler_items e interaciont response bla bla, it repites a lot.
 # ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
-# ? soporte de zoundcloud
+# ! soporte de soundcloud
+# ? añadir documentacion a las funciones de arriba
+# ? cambiar los iconos de los botones por palabras como el bot kena
+# ? Agregar embeds a lo necesario
 
 class MusicView(discord.ui.View):
     paused : bool = False
@@ -265,6 +268,14 @@ class Music(commands.Cog):
             await ctx.send(embed=embed_generator(f'No tracks found with query: `{query}`.'))
             return
 
+        # ensures the tracks object is Playable because Playabes does not have the attribute "tracks"
+        # if it does it means the provided link was a playlist
+        # ! This makes me think that I need to refactor all this code at the time of Soundcloud implementation
+        # ! NO SOUNDCLOUD IMPLEMENTATION WILL BE NEEDED BECAUSE SOUNDCLOUD IS NOT SUPPORTED BY WAVELINK
+        if hasattr(tracks, 'tracks'):
+            playlist_title = tracks.name
+            playlist = True
+        
         track = tracks.tracks[0] if youtube_playlist_query else tracks[0]
 
         # Checks if the bot is already connected to a voicechat
