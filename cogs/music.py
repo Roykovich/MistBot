@@ -25,6 +25,7 @@ LOFIS = {
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
 YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?:com|be)\/(?:playlist)*[A-Za-z0-9-_]*\?list\=[A-Za-z0-9-_]+(?:&si\=)*[A-Za-z0-9-_]+)"
 
+# Formats the time in milliseconds to a human readable format
 def format_time(milliseconds):
     hours = milliseconds // 3600000
     minutes = (milliseconds % 3600000) // 60000
@@ -32,6 +33,7 @@ def format_time(milliseconds):
 
     return f'{"0" if hours < 10 and hours > 0 else ""}{str(hours) + ":" if hours > 0 else ""}{minutes:02d}:{"0" if seconds < 10 else ""}{seconds:.0f}'
 
+# Generates an embed with the description given
 def embed_generator(description):
     embed = discord.Embed(
         colour = discord.Colour.dark_purple(),
@@ -40,6 +42,7 @@ def embed_generator(description):
 
     return embed
 
+# Removes all the items from the view
 def remove_all_items(view):
     for item in view.children:
         view.remove_item(item)
@@ -52,7 +55,7 @@ def remove_all_items(view):
 
 # ? funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
 # ! soporte de soundcloud
-# ? añadir documentacion a las funciones de arriba
+# * añadir documentacion a las funciones de arriba
 # ? cambiar los iconos de los botones por palabras como el bot kena
 # ? Agregar embeds a lo necesario
 
