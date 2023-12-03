@@ -1,4 +1,5 @@
 import pathlib, sys, os.path, json
+import discord
 
 BASE_DIR = pathlib.Path(__file__).parent
 
@@ -42,6 +43,12 @@ if os.path.exists('config.json'):
 
     if not SPOTIFY_SECRET:
         print('Theres no spotify secret in config.json')
+        sys.exit(1)
+    
+    GUILD_ID = discord.Object(id=int(json_dict['guild_id']))
+
+    if not SPOTIFY_SECRET:
+        print('Theres no guild id in config.json')
         sys.exit(1)
     
     

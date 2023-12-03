@@ -23,6 +23,10 @@ def main():
         for cog_file in settings.COGS_DIR.glob('*.py'):
             if cog_file != "__init__.py":
                 await bot.load_extension(f'cogs.{cog_file.name[:-3]}')
+                print('Loaded cog: ' + cog_file.name[:-3])
+                
+        bot.tree.copy_global_to(guild=settings.GUILD_ID)
+        await bot.tree.sync(guild=settings.GUILD_ID)
 
 
     @bot.event
