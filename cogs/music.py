@@ -63,7 +63,7 @@ class MusicView(discord.ui.View):
     paused : bool = False
 
     # rewind 15 seconds of the track
-    @discord.ui.button(label='⏪')
+    @discord.ui.button(label='Atrasar', emoji='⏪')
     async def rewind(self, interaction: discord.Interaction, button: discord.ui.Button):
         # self.vc.position are milliseconds, thats why need 15 times 1000
         new_position = self.vc.position - (15 * 1000)
@@ -71,7 +71,7 @@ class MusicView(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
     # Stops the Player if the ⏹️ is clicked
-    @discord.ui.button(label='⏹️')
+    @discord.ui.button(label='Parar', emoji='⏹️')
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         # stops Player
         self.vc.queue.clear()
@@ -84,22 +84,32 @@ class MusicView(discord.ui.View):
     # Pauses the Player if the ⏸ is clicked
     # When clicked the butto is updated to this ▶️ in order to create
     # user experience
-    @discord.ui.button(label='⏸️')
+    @discord.ui.button(label='Pausar', emoji='⏸️')
     async def pause_toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
         # flow of the current state of the Player
         if not self.paused:
             await self.vc.pause()
-            self.children[2].label = '▶️'
+            self.children[2].label = 'Resumir'
+            self.children[2].emoji = '▶️'
             self.paused = True
         else:
             await self.vc.resume()
-            self.children[2].label = '⏸'
+            self.children[2].label = 'Pausar'
+            self.children[2].emoji = '⏸️'
             self.paused = False
 
         await interaction.response.edit_message(view=self)
 
+    # fast forward 15 seconds of the track
+    @discord.ui.button(label='Adelantar', emoji='⏩')
+    async def fast_forward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # self.vc.position are milliseconds, thats why need 15 times 1000
+        new_position = self.vc.position + (15 * 1000)
+        await self.vc.seek(new_position)
+        await interaction.response.edit_message(view=self)
+        
     # Skips the Player to the next Track in the Queue when clicked
-    @discord.ui.button(label='➡️')
+    @discord.ui.button(label='Siguiente', emoji='⏭️')
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
         # if Queue is empty disonnects the bot and remove the children of the View
         if self.vc.queue.is_empty:
@@ -117,13 +127,6 @@ class MusicView(discord.ui.View):
         self.clear_items()
         await interaction.response.edit_message(view=self)
     
-    # fast forward 15 seconds of the track
-    @discord.ui.button(label='⏩')
-    async def fast_forward(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # self.vc.position are milliseconds, thats why need 15 times 1000
-        new_position = self.vc.position + (15 * 1000)
-        await self.vc.seek(new_position)
-        await interaction.response.edit_message(view=self)
 
 class LofiView(discord.ui.View):
     # When clicked the lofi is added to the Queue
