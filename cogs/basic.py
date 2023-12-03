@@ -1,59 +1,53 @@
-import random
 import discord
+import random
+import typing
 from discord.ext import commands
+from discord import app_commands
 
 class Basic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
     # roll command
     # gives a random number from 1 to 1000
-    @commands.command(name='roll') 
-    async def roll(self, ctx):
+    @app_commands.command(name='roll', description='Rolls a random number from 1 to 100') 
+    async def roll(self, interaction: discord.Interaction):
         embed = discord.Embed(
             colour = discord.Colour.dark_purple(),
-            description = f'🎲 {ctx.message.author.mention} rolls `{random.randint(1, 100)}`!'
+            description = f'🎲 {interaction.user.mention} rolls `{random.randint(1, 100)}`!'
         )
-        await ctx.send(embed=embed)
-
+        await interaction.response.send_message(embed=embed)
 
     # choose command
     # picks randomly a given item
-    @commands.command(name='choose') 
-    async def choose(self, ctx, *choices: str):
-        if not choices or len(choices) < 2:
-            return await ctx.send('Give me two or more things to pick')
+    @app_commands.command(name='choose', description='Picks randomly a given item. Use / to separate the items')
+    @app_commands.describe(choices='choices')
+    async def choose(self, interaction: discord.Interaction, choices: str):
+        choices = choices.split(' / ')
         
         embed = discord.Embed(
             colour = discord.Colour.dark_purple(),
-            description = f'You should pick `{random.choice(choices)}` ☝🏻'
+            description = f'Deberias escoger `{random.choice(choices)}` ☝🏻'
         )
 
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
     # rate command
     # rates something you give to the bot
-    @commands.command(name='rate')
-    async def rate(self, ctx, *choices: str):
-        if not choices or len(choices) == 1 and choices[0] == 'chileanway':
-            return await ctx.send('Give me something to rate')
-        
-        random_int = None
-
-        if choices[0] == 'chileanway':
-            random_int = f'{random.randint(1, 7)}/7'
-        else:
-            random_int = f'{random.randint(1, 10)}/10'
-
+    @app_commands.command(name='rate', description='Rates something')
+    @app_commands.choices(modo=[
+        app_commands.Choice(name='normal', value=10),
+        app_commands.Choice(name='chileno', value=7),
+    ])
+    @app_commands.describe(cosa='choice')
+    async def rate(self, interaction: discord.Interaction, modo: app_commands.Choice[int], cosa: str):
         embed = discord.Embed(
             colour = discord.Colour.dark_purple(),
-            description = f'Hmmm I give it a `{random_int}`'
+            description = f'Hmmmm {cosa} es como `{random.randint(1, modo.value)}/{modo.value}`'
         )
 
-        return await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     
-
     # avatar command
     # it returns the avatar of a mentioned user, if no mention returns the author's avatar
     @commands.command(name='avatar')
