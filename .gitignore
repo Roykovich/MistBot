@@ -4,4 +4,4 @@ config.json
 **/__pycache__/
 *.pyc
 /lavalink/*
-docker-compose.music.yml
+/cogs/test.py
