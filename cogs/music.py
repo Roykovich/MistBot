@@ -9,12 +9,6 @@ from settings import MUSIC_PASS as lavalink_password
 from settings import SPOTIFY_ID as spotify_id
 from settings import SPOTIFY_SECRET as spotify_secret
 
-# LOFI_GIRL = 'https://www.youtube.com/watch?v=jfKfPfyJRdk'
-# LOFI_BOY = 'https://www.youtube.com/watch?v=4xDzrJKXOOY'
-# LOFI_NATE = 'https://www.youtube.com/watch?v=UokZMBmnUGM'
-# LOFI_2_NATE = 'https://www.youtube.com/watch?v=0ucdLWYhdAc'
-# LOFI_MIDU = 'https://www.youtube.com/watch?v=p0OH206z9Wg'
-
 LOFIS = {
     'girl': 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     'boy': 'https://www.youtube.com/watch?v=4xDzrJKXOOY',
@@ -25,6 +19,11 @@ LOFIS = {
 
 SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
 YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?:com|be)\/(?:playlist)*[A-Za-z0-9-_]*\?list\=[A-Za-z0-9-_]+(?:&si\=)*[A-Za-z0-9-_]+)"
+
+# ? Hacer un decorator para esto como un @check
+# if not self.vc or self.vc.queue.is_empty:
+#         await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+#         return
 
 # Formats the time in milliseconds to a human readable format
 def format_time(milliseconds):
@@ -379,14 +378,22 @@ class Music(commands.Cog):
 
         await ctx.send(f'{queue}')
 
-    @commands.command(name='ff')
-    async def ff(self, ctx, seconds:int = 15):
-        new_position = self.vc.position + (seconds * 1000)
+    @app_commands.command(name='fast forward', description='Fast forwards 15 seconds of the current track')
+    async def ff(self, interaction: discord.Interaction):
+        if not self.vc or self.vc.queue.is_empty:
+            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            return
+            
+        new_position = self.vc.position + (15 * 1000)
         await self.vc.seek(new_position)
     
-    @commands.command(name='gb')
-    async def gb(self, ctx, seconds:int = 15):
-        new_position = self.vc.position - (seconds * 1000)
+    @app_commands.command(name='rewind', description='Rewinds 15 seconds of the current track')
+    async def gb(self, interaction: discord.Interaction):
+        if not self.vc or self.vc.queue.is_empty:
+            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            return
+            
+        new_position = self.vc.position - (15 * 1000)
         await self.vc.seek(new_position)
 
     @app_commands.command(name='current', description='Shows the current track')
