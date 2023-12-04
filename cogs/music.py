@@ -313,8 +313,13 @@ class Music(commands.Cog):
                 await message.delete(delay=5)
                 return
 
-    @commands.command(name='disconnect')
-    async def disconnect(self, ctx):
+    @app_commands.command(name='disconnect', description='Disconnects the bot from the voicechat')
+    async def disconnect(self, interaction: discord.Interaction):
+        if not self.vc or not self.vc.is_connected():
+            await interaction.response.send_message(embed=embed_generator(f'There is no playlist'), ephemeral=True, delete_after=3)
+            return
+        
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         await self.vc.disconnect()
 
     @app_commands.command(name='skip', description='Skips the current Track')
@@ -329,7 +334,7 @@ class Music(commands.Cog):
     
     @app_commands.command(name='pause', description='Pauses the Player if playing')
     async def pause(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
+        if not self.vc or not self.vc.is_connected():
             await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
             return
         
@@ -341,7 +346,7 @@ class Music(commands.Cog):
 
     @app_commands.command(name='resume', description='Resumes the Player if paused')
     async def resume(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
+        if not self.vc or not self.vc.is_connected():
             await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
             return
         
@@ -353,7 +358,7 @@ class Music(commands.Cog):
 
     @app_commands.command(name='stop', description='Stops the Player and disconnects the bot from the voicechat')
     async def stop(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
+        if not self.vc or not self.vc.is_connected():
             await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
             return
 
@@ -365,7 +370,6 @@ class Music(commands.Cog):
 
     @commands.command(name='playlist', aliases=['queue'])
     async def playlist(self, ctx):
-
         if not self.vc or self.vc.queue.is_empty:
             await ctx.send(embed=embed_generator(f'There\'s no playlist'))
             return 
@@ -378,21 +382,23 @@ class Music(commands.Cog):
 
         await ctx.send(f'{queue}')
 
-    @app_commands.command(name='fast forward', description='Fast forwards 15 seconds of the current track')
+    @app_commands.command(name='forward', description='Fast forwards 15 seconds of the current track')
     async def ff(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
+        if not self.vc or not self.vc.is_connected():
             await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
             return
-            
+        
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         new_position = self.vc.position + (15 * 1000)
         await self.vc.seek(new_position)
     
     @app_commands.command(name='rewind', description='Rewinds 15 seconds of the current track')
     async def gb(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
+        if not self.vc or not self.vc.is_connected():
             await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
             return
             
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         new_position = self.vc.position - (15 * 1000)
         await self.vc.seek(new_position)
 
