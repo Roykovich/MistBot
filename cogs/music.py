@@ -2,6 +2,7 @@ import discord
 import wavelink
 import re
 from discord.ext import commands
+from discord import app_commands
 from wavelink.ext import spotify
 
 from settings import MUSIC_PASS as lavalink_password
@@ -46,18 +47,6 @@ def embed_generator(description):
 def remove_all_items(view):
     for item in view.children:
         view.remove_item(item)
-
-
-# ! Agregar el view a una variable de la cog para evitar que los comandos
-# ! skip, stop, pause o resume la bugeen, basicamente hacerla una view global
-# ! para poder manejar su estado
-# * HECHO
-
-# * funcion de current con la current position y buscar una forma de crear una barra de carga con algoritmo
-# ! soporte de soundcloud
-# * añadir documentacion a las funciones de arriba
-# ? cambiar los iconos de los botones por palabras como el bot kena
-# ? Agregar embeds a lo necesario
 
 class MusicView(discord.ui.View):
     paused : bool = False
@@ -107,7 +96,7 @@ class MusicView(discord.ui.View):
         new_position = self.vc.position + (15 * 1000)
         await self.vc.seek(new_position)
         await interaction.response.edit_message(view=self)
-        
+
     # Skips the Player to the next Track in the Queue when clicked
     @discord.ui.button(label='Siguiente', emoji='⏭️')
     async def next_song(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -126,7 +115,6 @@ class MusicView(discord.ui.View):
 
         self.clear_items()
         await interaction.response.edit_message(view=self)
-    
 
 class LofiView(discord.ui.View):
     # When clicked the lofi is added to the Queue
@@ -386,10 +374,10 @@ class Music(commands.Cog):
         new_position = self.vc.position - (seconds * 1000)
         await self.vc.seek(new_position)
 
-    @commands.command(name='current')
-    async def current(self, ctx):
+    @app_commands.command(name='current', description='Shows the current track')
+    async def current(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await ctx.send(embed=embed_generator(f'No playlist'))
+            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=10)
             return
         
         track = self.vc.current
@@ -406,8 +394,7 @@ class Music(commands.Cog):
         embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
         embed.set_thumbnail(url=thumbnail)
 
-        message = await ctx.send(embed=embed)
-        await message.delete(delay=10)
+        await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
 
     @commands.command(name='lofi')
     async def lofi(self, ctx, choose:str = 'girl'):
