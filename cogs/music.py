@@ -318,12 +318,13 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         await self.vc.disconnect()
 
-    @commands.command(name='skip', aliases=['next'])
-    async def skip(self, ctx):
+    @app_commands.command(name='skip', description='Skips the current Track')
+    async def skip(self, interaction: discord.Interaction):
         if self.vc.queue.is_empty and not self.vc.is_connected():
-            await ctx.send(embed=embed_generator(f'There is no playlist'))
+            await interaction.response.send_message(embed=embed_generator(f'There is no playlist'), ephemeral=True, delete_after=3)
             return
         
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
     
