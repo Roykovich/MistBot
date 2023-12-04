@@ -396,45 +396,31 @@ class Music(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
 
-    @commands.command(name='lofi')
-    async def lofi(self, ctx, choose:str = 'girl'):
-        # lofi_search = None
-        
-        # match lofi:
-        #     case 'boy':
-        #         lofi_search = LOFI_BOY
-        #     case 'nate':
-        #         lofi_search = LOFI_NATE
-        #     case 'nate2':
-        #         lofi_search =  LOFI_2_NATE
-        #     case 'midu':
-        #         lofi_search = LOFI_MIDU
-        #     case _:
-        #         lofi_search = LOFI_GIRL
-
-        # returns a list of the keys from LOFIS constant
-        lofis = list(LOFIS.keys())
-        # uses list comprehesion to lookup for values inside the lofis list
-        # if the choose input from the user is inside the key list it will
-        # return an array with the current key provided by the user
-        lofi_search = [lofi for lofi in lofis if choose.lower() in lofi]
-
+    @app_commands.command(name='lofi', description='Plays a lofi radio')
+    @app_commands.choices(playlists = [
+        app_commands.Choice(name='relax/study', value='girl'),
+        app_commands.Choice(name='chill/game', value='boy'),
+        app_commands.Choice(name='[coding] nate', value='nate'),
+        app_commands.Choice(name='[coding] nate v2', value='nate2'),
+        app_commands.Choice(name='[coding] midu ', value='midu')
+    ])
+    async def lofi(self, interaction: discord.Interaction, playlists: app_commands.Choice[str]):
         # Assigns a channel to send info about the player
-        self.music_channel = ctx.message.channel
-        voice = ctx.message.author.voice
+        self.music_channel = interaction.channel
+        voice = interaction.user.voice
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await ctx.send(embed=embed_generator(f'Join a voice channel!'))
+            await interaction.response.send_message(embed=embed_generator(f'Join a voice channel!'), ephemeral=True, delete_after=10)
             return
         
         # using lofi_search list if is empty uses the default girl lofi or if the input is not in the list
         # if is in the list, it plays the url in LOFIS constant dict
-        tracks = await wavelink.YouTubeTrack.search(LOFIS['girl'] if not lofi_search else LOFIS[lofi_search[0]])
+        tracks = await wavelink.YouTubeTrack.search(LOFIS[playlists.value])
         
         # Checks if the query does not return something
         if not tracks:
-            await ctx.send(f'If you are reading this, it means that something happened to the links of the streams or the playlist')
+            await interaction.response.send_message(f'If you are reading this, it means that something happened to the links of the streams or the playlist')
             return
 
         track = tracks[0]
@@ -442,12 +428,10 @@ class Music(commands.Cog):
         if self.vc and self.vc.is_connected():
             view = LofiView(timeout=10)
             # this appends the new track to the queue
-            message = await self.music_channel.send(embed=embed_generator(f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'), view=view)
+            await interaction.response.send_message(embed=embed_generator(f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'), view=view, delete_after=10)
             view.vc = self.vc
             view.track = track
-
             await view.wait()
-            await message.delete(delay=5)
             return
         
         self.vc = await voice.channel.connect(cls=wavelink.Player)
