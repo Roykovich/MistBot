@@ -327,27 +327,29 @@ class Music(commands.Cog):
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
     
-    @commands.command(name='pause')
-    async def pause(self, ctx):
+    @app_commands.command(name='pause', description='Pauses the Player if playing')
+    async def pause(self, interaction: discord.Interaction):
         await self.vc.pause()
-        await ctx.message.delete(delay=1)
-        self.view.children[2].label = "▶️"
+        self.view.children[2].label = 'Resumir'
+        self.view.children[2].emoji = '▶️'
         await self.view_message.edit(view=self.view)
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
 
-    @commands.command(name='resume')
-    async def resume(self, ctx):
+    @app_commands.command(name='resume', description='Resumes the Player if paused')
+    async def resume(self, interaction: discord.Interaction):
         await self.vc.resume()
-        await ctx.message.delete(delay=1)
-        self.view.children[2].label = "⏸️"
+        self.view.children[2].label = 'Pausar'
+        self.view.children[2].emoji = '⏸️'
         await self.view_message.edit(view=self.view)
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
 
-    @commands.command(name='stop')
-    async def stop(self, ctx):
+    @app_commands.command(name='stop', description='Stops the Player and disconnects the bot from the voicechat')
+    async def stop(self, interaction: discord.Interaction):
         self.vc.queue.clear()
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
-        await ctx.message.delete(delay=1)
         await self.vc.stop()
+        await interaction.response.send_message(embed=embed_generator(f'Player stopped 👍'), ephemeral=True, delete_after=10)
 
     @commands.command(name='playlist', aliases=['queue'])
     async def playlist(self, ctx):
