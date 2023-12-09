@@ -203,17 +203,11 @@ class Music(commands.Cog):
     ######################
     #      COMMANDS      #
     ######################
-    @commands.command(name='play')
-    async def play(self, ctx, *title : str):
-        # ensures the user provides a query
-        if not title:
-            await ctx.send(embed=embed_generator(f'Use the command as `f!play <your query here>`'))
-            return
-        
-        # Set the tuple query into a string, usefull for spotify and youtube
-        query = " ".join(title)
+    @app_commands.command(name='play', description='Joins the voicechat and plays something')
+    @app_commands.describe(query='The title of the song you want to play')
+    async def play(self, interaction: discord.Interaction, query : str):
         # If theres no spotify link in the query it returns an empty list
-        spotify_query = re.findall(SPOTIFY_REGEX, query)
+        spotify_query = spotify.decode_url(query)
         # If theres no youtube playlist link in the query it returns an empty list
         youtube_playlist_query = re.findall(YOUTUBE_PLAYLIST_REGEX, query)
         # stores tracks if they are found
@@ -224,27 +218,29 @@ class Music(commands.Cog):
         playlist_title = ''
 
         # Assigns a channel to send info about the player
-        self.music_channel = ctx.message.channel
-        voice = ctx.message.author.voice
+        self.music_channel = interaction.channel
+        voice = interaction.user.voice
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await ctx.send(embed=embed_generator(f'Join a voice channel!'))
+            await interaction.response.send_message(embed=embed_generator(f'Join a voice channel!'), ephemeral=True, delete_after=10)
             return
 
         # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
         if spotify_query:
-            # Looks for the first URL match
-            payload = spotify.decode_url(spotify_query[0])
+            if spotify_query.type == spotify.SpotifySearchType.unusable:
+                await interaction.response.send_message(embed=embed_generator(f'Unusable link'), ephemeral=True, delete_after=10)
+                return
+            
             # Checks if the query is an album or a playlist
-            if payload.type == spotify.SpotifySearchType.playlist or spotify.SpotifySearchType.album:
+            if spotify_query.type == spotify.SpotifySearchType.playlist or spotify.SpotifySearchType.album:
                 # stores in form of a list the current Playables from the playlist or album
-                tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=spotify_query[0])
+                tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=query)
                 playlist_title = tracks[0].album
                 playlist = True
             else:
                 # Makes a spotify search of the query provided by the user
-                tracks = await spotify.SpotifyTrack.search(query=spotify_query[0])
+                tracks = await spotify.SpotifyTrack.search(query=query)
         # We check if the query url is a youtube playlist
         elif youtube_playlist_query:
             tracks = await wavelink.YouTubePlaylist.search(youtube_playlist_query[0])
@@ -257,13 +253,11 @@ class Music(commands.Cog):
         
         # Checks if the query does not return something
         if not tracks:
-            await ctx.send(embed=embed_generator(f'No tracks found with query: `{query}`.'))
+            await interaction.response.send_message(f'No tracks found with query: `{query}`', ephemeral=True, delete_after=10)
             return
 
         # ensures the tracks object is Playable because Playabes does not have the attribute "tracks"
         # if it does it means the provided link was a playlist
-        # ! This makes me think that I need to refactor all this code at the time of Soundcloud implementation
-        # ! NO SOUNDCLOUD IMPLEMENTATION WILL BE NEEDED BECAUSE SOUNDCLOUD IS NOT SUPPORTED BY WAVELINK
         if hasattr(tracks, 'tracks'):
             playlist_title = tracks.name
             playlist = True
@@ -273,6 +267,7 @@ class Music(commands.Cog):
         # Checks if the bot is already connected to a voicechat
         # if so, the query result is push it to the player queue (or playlist)
         if self.vc and self.vc.is_connected():
+            await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
             if playlist:
                 if youtube_playlist_query:
                     for track in tracks.tracks:
@@ -298,6 +293,7 @@ class Music(commands.Cog):
         self.vc.autoplay = True
 
         await self.vc.play(track, populate=False)
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
 
         if playlist:
             if youtube_playlist_query:
