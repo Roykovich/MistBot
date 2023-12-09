@@ -367,19 +367,31 @@ class Music(commands.Cog):
         await self.vc.stop()
         await interaction.response.send_message(embed=embed_generator(f'Player stopped 👍'), ephemeral=True, delete_after=10)
 
-    @commands.command(name='playlist', aliases=['queue'])
-    async def playlist(self, ctx):
+    @app_commands.command(name='playlist', description='Shows the current playlist')
+    async def playlist(self, interaction: discord.Interaction):
         if not self.vc or self.vc.queue.is_empty:
-            await ctx.send(embed=embed_generator(f'There\'s no playlist'))
+            await interaction.response.send_message(embed=embed_generator(f'There\'s no playlist'))
             return 
-
-        print(self.vc.queue)
+        current_track = self.vc.current
+        current_position = format_time(int(self.vc.position))
+        duration = format_time(current_track.length) if not current_track.is_stream else '🎙 live'
+        thumbnail = await current_track.fetch_thumbnail()
         queue = ''
+        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n'
 
-        for track in self.vc.queue:
-            queue += f'- {track} \n'
+        for i, track in enumerate(list(self.vc.queue)[:10]):
+            description += f'**[{i}]** {track.title}\n'
 
-        await ctx.send(f'{queue}')
+        description += f'\nfaltan `{len(self.vc.queue) - 10}` canciones' if len(self.vc.queue) > 10 else ''
+
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = description
+        )
+
+        embed.set_author(name='🎵 | Playlist')
+        embed.set_thumbnail(url=thumbnail)
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name='forward', description='Fast forwards 15 seconds of the current track')
     async def ff(self, interaction: discord.Interaction):
