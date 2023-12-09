@@ -312,9 +312,12 @@ class Music(commands.Cog):
     @app_commands.command(name='disconnect', description='Disconnects the bot from the voicechat')
     async def disconnect(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'There is no playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
             return
         
+        self.vc.queue.clear()
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         await self.vc.disconnect()
 
@@ -343,7 +346,7 @@ class Music(commands.Cog):
     @app_commands.command(name='resume', description='Resumes the Player if paused')
     async def resume(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
             return
         
         await self.vc.resume()
@@ -355,7 +358,7 @@ class Music(commands.Cog):
     @app_commands.command(name='stop', description='Stops the Player and disconnects the bot from the voicechat')
     async def stop(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
             return
 
         self.vc.queue.clear()
