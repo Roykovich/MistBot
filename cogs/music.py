@@ -24,7 +24,7 @@ YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?
 # if not self.vc or self.vc.queue.is_empty:
 #         await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
 #         return
-
+# ? Agregar un formateador de links y autores/artistas para spotify en los comandos current y playlist
 # Formats the time in milliseconds to a human readable format
 def format_time(milliseconds):
     hours = milliseconds // 3600000
@@ -70,7 +70,7 @@ class MusicView(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
     # Pauses the Player if the ⏸ is clicked
-    # When clicked the butto is updated to this ▶️ in order to create
+    # When clicked the button is updated to this ▶️ in order to create
     # user experience
     @discord.ui.button(label='Pausar', emoji='⏸️')
     async def pause_toggle(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -105,7 +105,7 @@ class MusicView(discord.ui.View):
             await self.vc.disconnect()
             self.clear_items()
             await interaction.response.edit_message(view=self)
-            await interaction.channel.send(embed=embed_generator(f'🎼 Playlist has ended. Bot disconnected from {channel} 👋'))
+            await interaction.channel.send(embed=embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
             return
         
         # If Queue has tracks it skips the current Track to the next one in Queue
@@ -117,19 +117,19 @@ class MusicView(discord.ui.View):
 
 class LofiView(discord.ui.View):
     # When clicked the lofi is added to the Queue
-    @discord.ui.button(label='Add', style=discord.ButtonStyle.success)
-    async def add(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label='Agregar', style=discord.ButtonStyle.success)
+    async def add(self, interaction: discord.Interaction):
         embed = interaction.message.embeds[0]
-        embed.description = f'Lofi added succesfully to the playlist!'
+        embed.description = f'El lofi ha sido agregado a la playlist!'
         self.vc.queue(self.track)
         self.clear_items()
         await interaction.response.edit_message(embed=embed, view=self)
 
     # When clicked the Player clear its Queue and plays the lofi instead
-    @discord.ui.button(label='Remove', style=discord.ButtonStyle.danger)
-    async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label='Quitar', style=discord.ButtonStyle.danger)
+    async def remove(self, interaction: discord.Interaction):
         embed = interaction.message.embeds[0]
-        embed.description = f'Removed. Here comes the lofi'
+        embed.description = f'Playlist limpiada. ¡Ahí va el lofi!'
         self.vc.queue.clear()
         await self.vc.play(self.track, populate=False)
         self.clear_items()
@@ -159,7 +159,7 @@ class Music(commands.Cog):
     ######################
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node):
-        print(f'node {node.id} is ready')
+        print(f'Nodo de lavalink: {node.id} está listo.')
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackEventPayload):
@@ -174,8 +174,8 @@ class Music(commands.Cog):
             description = f'[{track.title}]({track.uri})'
         )
         embed.set_author(name='🎵 | Suena')
-        embed.add_field(name='Duración', value=f'`{duration}`', inline=True)
-        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
+        embed.add_field(name='Duración:', value=f'`{duration}`', inline=True)
+        embed.add_field(name='Autor:', value=f'`{track.author}`', inline=True)
         embed.set_thumbnail(url=thumbnail)
 
         # check if is stream for the timeout of the buttons
@@ -195,7 +195,7 @@ class Music(commands.Cog):
             channel = self.vc.channel.mention
             self.vc.queue.reset()
             await self.vc.disconnect()
-            await self.music_channel.send(embed=embed_generator(f'🎼 Playlist has ended. Bot disconnected from {channel} 👋'))
+            await self.music_channel.send(embed=embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
         
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
@@ -203,8 +203,8 @@ class Music(commands.Cog):
     ######################
     #      COMMANDS      #
     ######################
-    @app_commands.command(name='play', description='Joins the voicechat and plays something')
-    @app_commands.describe(query='The title of the song you want to play')
+    @app_commands.command(name='play', description='Agrega el bot a un canal de voz y reproduce la canción que le pases')
+    @app_commands.describe(query='La canción que quieres reproducir')
     async def play(self, interaction: discord.Interaction, query : str):
         # If theres no spotify link in the query it returns an empty list
         spotify_query = spotify.decode_url(query)
@@ -223,13 +223,13 @@ class Music(commands.Cog):
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await interaction.response.send_message(embed=embed_generator(f'Join a voice channel!'), ephemeral=True, delete_after=10)
+            await interaction.response.send_message(embed=embed_generator(f'¡Únete a un canal de voz primero!'), ephemeral=True, delete_after=10)
             return
 
         # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
         if spotify_query:
             if spotify_query.type == spotify.SpotifySearchType.unusable:
-                await interaction.response.send_message(embed=embed_generator(f'Unusable link'), ephemeral=True, delete_after=10)
+                await interaction.response.send_message(embed=embed_generator(f'Este link de spotify no puede ser reproducido.'), ephemeral=True, delete_after=10)
                 return
             
             # Checks if the query is an album or a playlist
@@ -253,7 +253,7 @@ class Music(commands.Cog):
         
         # Checks if the query does not return something
         if not tracks:
-            await interaction.response.send_message(f'No tracks found with query: `{query}`', ephemeral=True, delete_after=10)
+            await interaction.response.send_message(f'Ninguna pista fue encontrada con: `{query}`.', ephemeral=True, delete_after=10)
             return
 
         # ensures the tracks object is Playable because Playabes does not have the attribute "tracks"
@@ -272,18 +272,18 @@ class Music(commands.Cog):
                 if youtube_playlist_query:
                     for track in tracks.tracks:
                         self.vc.queue(track)
-                    message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                    message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de YouTube se ha añadido exitosamente!`"))
                     await message.delete(delay=5)
                     return
                 elif spotify_query:
                     for track in tracks:
                         self.vc.queue(track)
-                    message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                    message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de Spotify se ha añadido exitosamente!`"))
                     await message.delete(delay=5)
                     return
             else:
                 self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` has been added to the queue.'))
+                message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` se ha agregado a la playlist.'))
                 await message.delete(delay=5)
                 return
 
@@ -299,20 +299,20 @@ class Music(commands.Cog):
             if youtube_playlist_query:
                 for track in tracks.tracks[1:]:
                     self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de YouTube se ha añadido exitosamente!`"))
                 await message.delete(delay=5)
                 return
             elif spotify_query:
                 for track in tracks[1:]:
                     self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f"`{playlist_title} added succesfully!`"))
+                message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de Spotify se ha añadido exitosamente!`"))
                 await message.delete(delay=5)
                 return
 
-    @app_commands.command(name='disconnect', description='Disconnects the bot from the voicechat')
+    @app_commands.command(name='disconnect', description='Desconecta el bot del canal de voz y limpia la playlist')
     async def disconnect(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
         
         self.vc.queue.clear()
@@ -321,20 +321,20 @@ class Music(commands.Cog):
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         await self.vc.disconnect()
 
-    @app_commands.command(name='skip', description='Skips the current Track')
+    @app_commands.command(name='skip', description='Salta a la siguiente canción de la playlist')
     async def skip(self, interaction: discord.Interaction):
         if self.vc.queue.is_empty and not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'There is no playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado'), ephemeral=True, delete_after=3)
             return
         
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         next_track = await self.vc.queue.get_wait()
         await self.vc.play(next_track, populate=False)
     
-    @app_commands.command(name='pause', description='Pauses the Player if playing')
+    @app_commands.command(name='pause', description='Pausa el bot si está reproduciendo')
     async def pause(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
         
         await self.vc.pause()
@@ -343,10 +343,10 @@ class Music(commands.Cog):
         await self.view_message.edit(view=self.view)
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
 
-    @app_commands.command(name='resume', description='Resumes the Player if paused')
+    @app_commands.command(name='resume', description='Resume el bot si está pausado')
     async def resume(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
         
         await self.vc.resume()
@@ -355,34 +355,48 @@ class Music(commands.Cog):
         await self.view_message.edit(view=self.view)
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
 
-    @app_commands.command(name='stop', description='Stops the Player and disconnects the bot from the voicechat')
+    @app_commands.command(name='stop', description='Detiene el bot y limpia la playlist')
     async def stop(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'Bot is not playing'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
 
         self.vc.queue.clear()
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
         await self.vc.stop()
-        await interaction.response.send_message(embed=embed_generator(f'Player stopped 👍'), ephemeral=True, delete_after=10)
+        await interaction.response.send_message(embed=embed_generator(f'Bot detenido 👍'), ephemeral=True, delete_after=3)
 
-    @app_commands.command(name='playlist', description='Shows the current playlist')
+    @app_commands.command(name='playlist', description='Muestra la playlist')
     async def playlist(self, interaction: discord.Interaction):
-        if not self.vc or self.vc.queue.is_empty:
-            await interaction.response.send_message(embed=embed_generator(f'There\'s no playlist'))
-            return 
+        if not self.vc or not self.vc.is_connected():
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
+            return
+        
         current_track = self.vc.current
         current_position = format_time(int(self.vc.position))
         duration = format_time(current_track.length) if not current_track.is_stream else '🎙 live'
         thumbnail = await current_track.fetch_thumbnail()
-        queue = ''
-        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n'
+        
+        if not self.vc.queue or self.vc.queue.is_empty:
+            embed = discord.Embed(
+                colour = discord.Colour.dark_purple(),
+                description = f'[{current_track.title}]({current_track.uri})'
+            )
+            embed.set_author(name='🎵 | Suena')
+            embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
+            embed.add_field(name='autor', value=f'`{current_track.author}`', inline=True)
+            embed.set_thumbnail(url=thumbnail)
+
+            await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
+            return 
+        
+        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:*\n'
 
         for i, track in enumerate(list(self.vc.queue)[:10]):
             description += f'**[{i}]** {track.title}\n'
 
-        description += f'\nfaltan `{len(self.vc.queue) - 10}` canciones' if len(self.vc.queue) > 10 else ''
+        description += f'\nY faltan `{len(self.vc.queue) - 10}` canciones...' if len(self.vc.queue) > 10 else ''
 
         embed = discord.Embed(
             colour = discord.Colour.dark_purple(),
@@ -393,30 +407,30 @@ class Music(commands.Cog):
         embed.set_thumbnail(url=thumbnail)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name='forward', description='Fast forwards 15 seconds of the current track')
+    @app_commands.command(name='forward', description='Adelanta 15 segundos de la canción actual')
     async def ff(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
         
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         new_position = self.vc.position + (15 * 1000)
         await self.vc.seek(new_position)
     
-    @app_commands.command(name='rewind', description='Rewinds 15 seconds of the current track')
+    @app_commands.command(name='rewind', description='Atrasa 15 segundos de la canción actual')
     async def gb(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             return
             
         await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
         new_position = self.vc.position - (15 * 1000)
         await self.vc.seek(new_position)
 
-    @app_commands.command(name='current', description='Shows the current track')
+    @app_commands.command(name='current', description='Muestra la canción actual')
     async def current(self, interaction: discord.Interaction):
         if not self.vc or not self.vc.is_connected():
-            await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=10)
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=10)
             return
         
         track = self.vc.current
@@ -435,7 +449,7 @@ class Music(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
 
-    @app_commands.command(name='lofi', description='Plays a lofi radio')
+    @app_commands.command(name='lofi', description='Reproduce una radio con lofi')
     @app_commands.choices(playlists = [
         app_commands.Choice(name='relax/study', value='girl'),
         app_commands.Choice(name='chill/game', value='boy'),
@@ -450,7 +464,7 @@ class Music(commands.Cog):
 
         # checks if the user is connected to a voicechat
         if not voice:
-            await interaction.response.send_message(embed=embed_generator(f'Join a voice channel!'), ephemeral=True, delete_after=10)
+            await interaction.response.send_message(embed=embed_generator(f'¡Únete a un canal de voz primero!'), ephemeral=True, delete_after=10)
             return
         
         # using lofi_search list if is empty uses the default girl lofi or if the input is not in the list
@@ -459,7 +473,7 @@ class Music(commands.Cog):
         
         # Checks if the query does not return something
         if not tracks:
-            await interaction.response.send_message(f'If you are reading this, it means that something happened to the links of the streams or the playlist')
+            await interaction.response.send_message(f'Si estás viendo esto es porque algo salió mal, por favor reportalo a Rubén')
             return
 
         track = tracks[0]
@@ -467,7 +481,7 @@ class Music(commands.Cog):
         if self.vc and self.vc.is_connected():
             view = LofiView(timeout=10)
             # this appends the new track to the queue
-            await interaction.response.send_message(embed=embed_generator(f'Wanna add the lofi radio to the playlist or you want to remove the playlist and let the radio alone?'), view=view, delete_after=10)
+            await interaction.response.send_message(embed=embed_generator(f'¿Quieres agregar la radio a la playlist **o** quiere limpiar la lista y agregar la radio?'), view=view, delete_after=10)
             view.vc = self.vc
             view.track = track
             await view.wait()
