@@ -25,6 +25,8 @@ YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?
 #         await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
 #         return
 # ? Agregar un formateador de links y autores/artistas para spotify en los comandos current y playlist
+# ? Agregar shuffle y loop
+# ? agregar un comando para quitar canciones en especifico segun su index
 # Formats the time in milliseconds to a human readable format
 def format_time(milliseconds):
     hours = milliseconds // 3600000
@@ -448,6 +450,15 @@ class Music(commands.Cog):
         embed.set_thumbnail(url=thumbnail)
 
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
+
+    @app_commands.command(name='shuffle', description='Mezcla la playlist')
+    async def shuffle(self, interaction: discord.Interaction):
+        if not self.vc or not self.vc.is_connected():
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado'), ephemeral=True, delete_after=3)
+            return
+        
+        self.vc.queue.shuffle()
+        await interaction.response.send_message(embed=embed_generator(f'Playlist mezclada 👍'), delete_after=3)
 
     @app_commands.command(name='lofi', description='Reproduce una radio con lofi')
     @app_commands.choices(playlists = [
