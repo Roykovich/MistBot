@@ -393,7 +393,7 @@ class Music(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
             return 
         
-        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:*\n'
+        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:**\n'
 
         for i, track in enumerate(list(self.vc.queue)[:10]):
             description += f'**[{i}]** {track.title}\n'
@@ -459,6 +459,38 @@ class Music(commands.Cog):
         
         self.vc.queue.shuffle()
         await interaction.response.send_message(embed=embed_generator(f'Playlist mezclada 👍'), delete_after=3)
+
+
+    @app_commands.command(name='loop', description='Repite la playlist')
+    @app_commands.choices(loop = [
+        app_commands.Choice(name='apagado', value='apagado'),
+        app_commands.Choice(name='encendido', value='encendido')
+    ])
+    async def loop(self, interaction: discord.Interaction, loop: app_commands.Choice[str]):
+        print(self.vc.queue.loop)
+        if not self.vc or not self.vc.is_connected():
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado'), ephemeral=True, delete_after=3)
+            return
+        
+        self.vc.queue.loop = True if loop.value == 'encendido' else False
+        await interaction.response.send_message(embed=embed_generator(f'Loop {"activado" if loop.value == "encendido" else "desactivado"} 👍'), delete_after=3)
+
+    @app_commands.command(name='loopplaylist', description='Repite la playlist actual')
+    @app_commands.choices(loop = [
+        app_commands.Choice(name='apagado', value='apagado'),
+        app_commands.Choice(name='encendido', value='encendido')
+    ])
+    async def loop_playlist(self, interaction: discord.Interaction, loop: app_commands.Choice[str]):
+        if not self.vc or not self.vc.is_connected():
+            await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado'), ephemeral=True, delete_after=3)
+            return
+        
+        if self.vc.queue.loop == True:
+            await interaction.response.send_message(embed=embed_generator(f'Primero desactiva el loop de la canción actual con `/loop`'), ephemeral=True, delete_after=3)
+            return
+
+        self.vc.queue.loop_playlist = True if loop.value == 'encendido' else False
+        await interaction.response.send_message(embed=embed_generator(f'Loop {"activado" if loop.value == "encendido" else "desactivado"} 👍'), delete_after=3)
 
     @app_commands.command(name='lofi', description='Reproduce una radio con lofi')
     @app_commands.choices(playlists = [
