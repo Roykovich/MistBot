@@ -17,16 +17,8 @@ LOFIS = {
     'midu': 'https://www.youtube.com/watch?v=p0OH206z9Wg'
 }
 
-SPOTIFY_REGEX = r"(?:\bhttps:\/\/open\.spotify\.com\/(?:track|episode|album|playlist)\/[A-Za-z0-9?=]+|spotify:(?:track|episode|album|playlist):[A-Za-z0-9?=]+)"
 YOUTUBE_PLAYLIST_REGEX = r"(?:\bhttps:\/\/(?:www|music)*\.*(?:youtube|youtu)\.(?:com|be)\/(?:playlist)*[A-Za-z0-9-_]*\?list\=[A-Za-z0-9-_]+(?:&si\=)*[A-Za-z0-9-_]+)"
 
-# ? Hacer un decorator para esto como un @check
-# if not self.vc or self.vc.queue.is_empty:
-#         await interaction.response.send_message(embed=embed_generator(f'No playlist'), ephemeral=True, delete_after=3)
-#         return
-# ? Agregar un formateador de links y autores/artistas para spotify en los comandos current y playlist
-# ? Agregar shuffle y loop
-# ? agregar un comando para quitar canciones en especifico segun su index
 # Formats the time in milliseconds to a human readable format
 def format_time(milliseconds):
     hours = milliseconds // 3600000
