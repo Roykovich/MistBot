@@ -49,6 +49,23 @@ def remove_all_items(view):
     for item in view.children:
         view.remove_item(item)
 
+class MusicExceptionHandler(app_commands.CheckFailure):
+    ...
+
+def check_voice():
+    async def predicate(interaction: discord.Interaction)  -> bool:
+        if interaction.user.voice is None:
+            raise MusicExceptionHandler('not_in_voice')
+        
+        if interaction.client.voice_clients is None:
+            raise MusicExceptionHandler('no_bot_in_voice')
+        
+        if interaction.client.voice_clients and (interaction.user.voice.channel != interaction.client.voice_clients[0].channel):
+            raise MusicExceptionHandler('not_in_same_voice')
+        
+        return True
+    return app_commands.check(predicate)
+
 class MusicView(discord.ui.View):
     paused : bool = False
 
@@ -202,6 +219,14 @@ class Music(commands.Cog):
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
 
+    async def cog_app_command_error(self, interaction: discord.Interaction, exception: discord.DiscordException):
+        if isinstance(exception, MusicExceptionHandler):
+            if exception.args[0] == 'not_in_voice':
+                await interaction.response.send_message(embed=embed_generator(f'¡Únete a un canal de voz primero!'), ephemeral=True, delete_after=3)
+            elif exception.args[0] == 'no_bot_in_voice':
+                await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
+            elif exception.args[0] == 'not_in_same_voice':
+                await interaction.response.send_message(embed=embed_generator(f'El bot ya esta reproduciendo en otro canal'), ephemeral=True, delete_after=3)
     ######################
     #      COMMANDS      #
     ######################
