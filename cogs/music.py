@@ -227,10 +227,12 @@ class Music(commands.Cog):
                 await interaction.response.send_message(embed=embed_generator(f'El bot no está conectado.'), ephemeral=True, delete_after=3)
             elif exception.args[0] == 'not_in_same_voice':
                 await interaction.response.send_message(embed=embed_generator(f'El bot ya esta reproduciendo en otro canal'), ephemeral=True, delete_after=3)
+
     ######################
     #      COMMANDS      #
     ######################
     @app_commands.command(name='play', description='Agrega el bot a un canal de voz y reproduce la canción que le pases')
+    @check_voice()
     @app_commands.describe(query='La canción que quieres reproducir')
     async def play(self, interaction: discord.Interaction, query : str):
         # If theres no spotify link in the query it returns an empty list
@@ -248,11 +250,6 @@ class Music(commands.Cog):
         self.music_channel = interaction.channel
         voice = interaction.user.voice
 
-        # checks if the user is connected to a voicechat
-        if not voice:
-            await interaction.response.send_message(embed=embed_generator(f'¡Únete a un canal de voz primero!'), ephemeral=True, delete_after=10)
-            return
-
         # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
         if spotify_query:
             if spotify_query.type == spotify.SpotifySearchType.unusable:
@@ -268,14 +265,12 @@ class Music(commands.Cog):
             else:
                 # Makes a spotify search of the query provided by the user
                 tracks = await spotify.SpotifyTrack.search(query=query)
-        # We check if the query url is a youtube playlist
-        elif youtube_playlist_query:
+
+        elif youtube_playlist_query: # We check if the query url is a youtube playlist
             tracks = await wavelink.YouTubePlaylist.search(youtube_playlist_query[0])
             playlist_title = tracks.name
             playlist = True
-
-        else:
-            # Makes a youtube search of the query provided by the user
+        else: # Makes a youtube search of the query provided by the user
             tracks = await wavelink.YouTubeTrack.search(query)
         
         # Checks if the query does not return something
@@ -294,24 +289,18 @@ class Music(commands.Cog):
         # Checks if the bot is already connected to a voicechat
         # if so, the query result is push it to the player queue (or playlist)
         if self.vc and self.vc.is_connected():
-            await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
             if playlist:
                 if youtube_playlist_query:
-                    for track in tracks.tracks:
-                        self.vc.queue(track)
-                    message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de YouTube se ha añadido exitosamente!`"))
-                    await message.delete(delay=5)
+                    self.vc.queue += tracks.tracks
+                    await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` de YouTube se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                     return
                 elif spotify_query:
-                    for track in tracks:
-                        self.vc.queue(track)
-                    message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de Spotify se ha añadido exitosamente!`"))
-                    await message.delete(delay=5)
+                    self.vc.queue += tracks
+                    await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` de Spotify se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                     return
             else:
                 self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f'`{track.title}` se ha agregado a la playlist.'))
-                await message.delete(delay=5)
+                await interaction.response.send_message(embed=embed_generator(f'`{track.title}` se ha agregado a la playlist.'), ephemeral=True, delete_after=5)
                 return
 
         # We create the player and connect it to the voicechat
@@ -320,20 +309,16 @@ class Music(commands.Cog):
         self.vc.autoplay = True
 
         await self.vc.play(track, populate=False)
-        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.5)
+        await interaction.response.send_message(content=f'👍🏻', ephemeral=True, delete_after=0.5)
 
         if playlist:
             if youtube_playlist_query:
-                for track in tracks.tracks[1:]:
-                    self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de YouTube se ha añadido exitosamente!`"))
-                await message.delete(delay=5)
+                self.vc.queue += tracks.tracks
+                await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` de YouTube se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                 return
             elif spotify_query:
-                for track in tracks[1:]:
-                    self.vc.queue(track)
-                message = await self.music_channel.send(embed=embed_generator(f"`¡La playlist {playlist_title} de Spotify se ha añadido exitosamente!`"))
-                await message.delete(delay=5)
+                self.vc.queue += tracks
+                await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` de Spotify se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                 return
 
     @app_commands.command(name='disconnect', description='Desconecta el bot del canal de voz y limpia la playlist')
