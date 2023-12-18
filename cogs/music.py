@@ -378,7 +378,7 @@ class Music(commands.Cog):
 
         embed.set_author(name='🎵 | Playlist')
         embed.set_thumbnail(url=thumbnail)
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
 
     @app_commands.command(name='forward', description='Adelanta 15 segundos de la canción actual')
     @check_voice()
@@ -481,6 +481,7 @@ class Music(commands.Cog):
         self.vc.autoplay = False
 
         await self.vc.play(track, populate=False)
+        await interaction.response.send_message(embed=embed_generator(f'👍'), ephemeral=True, delete_after=0.3)
 
 async def setup(bot):
     music_bot = Music(bot)
