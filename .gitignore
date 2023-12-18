@@ -1,5 +1,5 @@
 leer.txt
-config.json
+**.env
 /bot-env
 **/__pycache__/
 *.pyc
