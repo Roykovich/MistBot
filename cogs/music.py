@@ -129,7 +129,7 @@ class MusicView(discord.ui.View):
 class LofiView(discord.ui.View):
     # When clicked the lofi is added to the Queue
     @discord.ui.button(label='Agregar', style=discord.ButtonStyle.success)
-    async def add(self, interaction: discord.Interaction):
+    async def add_to(self, interaction: discord.Interaction):
         embed = interaction.message.embeds[0]
         embed.description = f'El lofi ha sido agregado a la playlist!'
         self.vc.queue(self.track)
@@ -145,6 +145,101 @@ class LofiView(discord.ui.View):
         await self.vc.play(self.track, populate=False)
         self.clear_items()
         await interaction.response.edit_message(embed=embed, view=self)
+
+class PlaylistView(discord.ui.View):
+    # The current page of the playlist
+    current_page: int = 1
+    # The separator of the playlist, in this case is 10 tracks per page
+    separator: int = 10
+
+    # Sends the playlist to the channel where the command was invoked from 
+    async def send(self):
+        embed = await self.create_embed(list(self.vc.queue)[:self.separator])
+        self.message = await self.music_channel.send(embed=embed, view=self)
+        await self.update_message(list(self.vc.queue)[:self.separator])
+
+    # Creates the embed of the playlist
+    async def create_embed(self, tracks):
+        current_track = self.vc.current
+        current_position = format_time(int(self.vc.position))
+        duration = format_time(current_track.length) if not current_track.is_stream else '🎙 live'
+        thumbnail = await current_track.fetch_thumbnail()
+
+        # if the queue is empty it returns the current track
+        if not self.vc.queue or self.vc.queue.is_empty:
+            embed = discord.Embed(
+                colour = discord.Colour.dark_purple(),
+                description = f'[{current_track.title}]({current_track.uri})'
+            )
+            embed.set_author(name='🎵 | Suena')
+            embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
+            embed.add_field(name='autor', value=f'`{current_track.author}`', inline=True)
+            embed.set_thumbnail(url=thumbnail)
+
+            return embed
+
+        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:**\n'
+        
+        for i, track in enumerate(tracks):
+            description += f'`[{i}]`丨**{track.title}**\n'
+
+        embed = discord.Embed(
+            title=f"Página {self.current_page} / {int(len(self.vc.queue) / self.separator) + 1}",
+            color=discord.Colour.dark_purple(), 
+            description=description
+        )
+
+        return embed
+
+    # Updates the message of the playlist
+    async def update_message(self, data):
+        self.update_buttons()
+        embed = await self.create_embed(data)
+        await self.message.edit(embed=embed, view=self)
+
+    # Updates the buttons of the playlist
+    def update_buttons(self):
+        if self.current_page == 1:
+            self.previous.disabled = True
+            self.previous.style = discord.ButtonStyle.grey
+        else:
+            self.previous.disabled = False
+            self.previous.style = discord.ButtonStyle.primary
+        
+        if self.current_page == int(len(self.vc.queue) / self.separator) + 1:
+            self.next.disabled = True
+            self.next.style = discord.ButtonStyle.grey
+        else:
+            self.next.disabled = False
+            self.next.style = discord.ButtonStyle.primary
+
+    # Gets the current page of the playlist
+    def get_current_page(self):
+        until_page = self.current_page * self.separator
+        from_page = until_page - self.separator
+
+        if self.current_page == 1:
+            from_page = 0
+            until_page = self.separator
+        
+        if self.current_page == int(len(self.vc.queue) / self.separator) + 1:
+            from_page = self.current_page - 1 * self.separator - self.separator
+            until_page = len(self.vc.queue)
+
+        return list(self.vc.queue)[from_page:until_page]
+
+
+    @discord.ui.button(label='Anterior', emoji='⬅️', style=discord.ButtonStyle.gray, disabled=True)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current_page -= 1
+        await self.update_message(self.get_current_page())
+
+    @discord.ui.button(label='Siguiente', emoji='➡️', style=discord.ButtonStyle.primary)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current_page += 1
+        await self.update_message(self.get_current_page())
 
 class Music(commands.Cog):
     vc : wavelink.Player = None
@@ -246,6 +341,7 @@ class Music(commands.Cog):
 
         # We check depending on the query if we search for a spotify track, a souncloud track or a youtube track
         if spotify_query:
+            print('spotify')
             if spotify_query.type == spotify.SpotifySearchType.unusable:
                 await interaction.response.send_message(embed=embed_generator(f'Este link de spotify no puede ser reproducido.'), ephemeral=True, delete_after=10)
                 return
@@ -346,39 +442,12 @@ class Music(commands.Cog):
     @app_commands.command(name='playlist', description='Muestra la playlist')
     @check_voice()
     async def playlist(self, interaction: discord.Interaction):
-        current_track = self.vc.current
-        current_position = format_time(int(self.vc.position))
-        duration = format_time(current_track.length) if not current_track.is_stream else '🎙 live'
-        thumbnail = await current_track.fetch_thumbnail()
-        
-        if not self.vc.queue or self.vc.queue.is_empty:
-            embed = discord.Embed(
-                colour = discord.Colour.dark_purple(),
-                description = f'[{current_track.title}]({current_track.uri})'
-            )
-            embed.set_author(name='🎵 | Suena')
-            embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
-            embed.add_field(name='autor', value=f'`{current_track.author}`', inline=True)
-            embed.set_thumbnail(url=thumbnail)
+        await interaction.response.send_message(embed=embed_generator(f'Bot detenido 👍'), ephemeral=True, delete_after=0.3)
+        view = PlaylistView(timeout=None)
+        view.vc = self.vc
+        view.music_channel = self.music_channel
+        await view.send()
 
-            await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
-            return 
-        
-        description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:**\n'
-
-        for i, track in enumerate(list(self.vc.queue)[:10]):
-            description += f'**[{i}]** {track.title}\n'
-
-        description += f'\nY faltan `{len(self.vc.queue) - 10}` canciones...' if len(self.vc.queue) > 10 else ''
-
-        embed = discord.Embed(
-            colour = discord.Colour.dark_purple(),
-            description = description
-        )
-
-        embed.set_author(name='🎵 | Playlist')
-        embed.set_thumbnail(url=thumbnail)
-        await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=10)
 
     @app_commands.command(name='forward', description='Adelanta 15 segundos de la canción actual')
     @check_voice()
@@ -427,20 +496,6 @@ class Music(commands.Cog):
     ])
     async def loop(self, interaction: discord.Interaction, loop: app_commands.Choice[str]):
         self.vc.queue.loop = True if loop.value == 'encendido' else False
-        await interaction.response.send_message(embed=embed_generator(f'Loop {"activado" if loop.value == "encendido" else "desactivado"} 👍'), delete_after=3)
-
-    @app_commands.command(name='loopplaylist', description='Repite la playlist actual')
-    @check_voice()
-    @app_commands.choices(loop = [
-        app_commands.Choice(name='apagado', value='apagado'),
-        app_commands.Choice(name='encendido', value='encendido')
-    ])
-    async def loop_playlist(self, interaction: discord.Interaction, loop: app_commands.Choice[str]):
-        if self.vc.queue.loop == True:
-            await interaction.response.send_message(embed=embed_generator(f'Primero desactiva el loop de la canción actual con `/loop`'), ephemeral=True, delete_after=3)
-            return
-
-        self.vc.queue.loop_playlist = True if loop.value == 'encendido' else False
         await interaction.response.send_message(embed=embed_generator(f'Loop {"activado" if loop.value == "encendido" else "desactivado"} 👍'), delete_after=3)
 
     @app_commands.command(name='lofi', description='Reproduce una radio con lofi')
