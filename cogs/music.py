@@ -299,8 +299,6 @@ class Music(commands.Cog):
         # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
             channel = self.vc.channel.mention
-            self.vc.queue.reset()
-            await self.vc.disconnect()
             await self.music_channel.send(embed=embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
         
         remove_all_items(self.view)
