@@ -299,6 +299,8 @@ class Music(commands.Cog):
         # basically disconnects the bot if the playlist has ended
         if self.vc.queue.is_empty and not self.vc.is_playing():
             channel = self.vc.channel.mention
+            self.vc.auto_queue.reset()
+            await self.vc.stop()
             await self.music_channel.send(embed=embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
         
         remove_all_items(self.view)
@@ -375,7 +377,7 @@ class Music(commands.Cog):
             # Is the bot is connected to the voice channel and is not playing anything
             # it plays the track
             if not self.vc.is_playing():
-                await interaction.response.defer()
+                await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.3)
                 await self.vc.play(track, populate=False)
                 return
 
