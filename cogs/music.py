@@ -372,10 +372,20 @@ class Music(commands.Cog):
         # Checks if the bot is already connected to a voicechat
         # if so, the query result is push it to the player queue (or playlist)
         if self.vc and self.vc.is_connected():
+            # Is the bot is connected to the voice channel and is not playing anything
+            # it plays the track
+            if not self.vc.is_playing():
+                await interaction.response.defer()
+                await self.vc.play(track, populate=False)
+                return
+
+            # if the query is a playlist or an album it adds the tracks to the queueq
             if playlist:
                 self.vc.queue += tracks[1:]
                 await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                 return
+            
+            # if the query is a single track it adds it to the queue 
             self.vc.queue(track)
             await interaction.response.send_message(embed=embed_generator(f'`{track.title}` se ha agregado a la playlist.'), ephemeral=True, delete_after=5)
             return
@@ -440,7 +450,7 @@ class Music(commands.Cog):
     @app_commands.command(name='playlist', description='Muestra la playlist')
     @check_voice()
     async def playlist(self, interaction: discord.Interaction):
-        await interaction.response.send_message(embed=embed_generator(f'Bot detenido 👍'), ephemeral=True, delete_after=0.3)
+        await interaction.response.send_message(content=f'👍', ephemeral=True, delete_after=0.3)
         view = PlaylistView(timeout=None)
         view.vc = self.vc
         view.music_channel = self.music_channel
