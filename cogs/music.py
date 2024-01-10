@@ -383,7 +383,7 @@ class Music(commands.Cog):
 
             # if the query is a playlist or an album it adds the tracks to the queueq
             if playlist:
-                self.vc.queue += tracks[1:]
+                self.vc.queue += tracks
                 await interaction.response.send_message(embed=embed_generator(f"¡La playlist `{playlist_title}` se ha añadido exitosamente!"), ephemeral=True, delete_after=5)
                 return
             
