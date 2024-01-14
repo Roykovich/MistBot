@@ -61,11 +61,11 @@ class CustomReactions(commands.Cog):
     @commands.command('acr', help='Adds a custom reaction to the database')
     async def addcr(self, ctx, *args):
         if not args or (len(args) < 2):
-            await ctx.send('Faltan argumentos')
+            await ctx.send(f'Faltan argumentos. Intenta `{self.bot.command_prefix}acr <trigger> <response>`')
             return
         
         if (len(args) > 2):
-            await ctx.send('sobran argumentos')
+            await ctx.send(f'sobran argumentos. Intenta `{self.bot.command_prefix}acr <trigger> <response>`')
             return
         
         trigger = args[0].lower()
@@ -74,12 +74,34 @@ class CustomReactions(commands.Cog):
 
         db.execute('INSERT INTO reactions (trigger, response, cr_id) VALUES (?, ?, ?)', (trigger, response, cr_id))
 
+        embed = discord.Embed(title='Reacción agregada', description=f'`{cr_id}`', color=discord.Colour.dark_purple())
+        embed.add_field(name='Trigger', value=trigger, inline=False)
+        embed.add_field(name='Response', value=response, inline=False)
+
+        await ctx.send(embed=embed)
+
         return
     
     @commands.command('dcr', help='Deletes a custom reaction from the database')
     async def delcr(self, ctx, *args):
-        print(args)
-        return
+        if not args:
+            await ctx.send(f'Faltan argumentos. Intenta `{self.bot.command_prefix}dcr <id>. Para revisar los ids usa `{self.bot.command_prefix}lcr`')
+            return
+        
+        try:
+            cr_uuid = uuid.UUID(args[0])
+            parsed_uuid = cr_uuid.bytes_le
+            
+            db.execute('DELETE FROM reactions WHERE cr_id = ?', (parsed_uuid,))
+            
+            embed = discord.Embed(title='Reacción eliminada', description=f'`{cr_uuid}`', color=discord.Colour.dark_purple())
+            
+            await ctx.send(embed=embed)
+
+            return
+        except ValueError:
+            await ctx.send(f'El id no es válido. Para revisar los ids usa `{self.bot.command_prefix}lcr`')
+            return
     
     @commands.command('lcr', help='Lists all the custom reactions')
     async def listcr(self, ctx, *args):
