@@ -5,3 +5,4 @@ leer.txt
 *.pyc
 /lavalink/*
 /cogs/test.py
+custom_reactions.db
