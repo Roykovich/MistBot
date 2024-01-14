@@ -13,7 +13,7 @@ def main():
     intents.message_content = True
 
     # create the bot instance with prefix and intenst so far
-    bot = commands.Bot(command_prefix='f!', intents=intents)
+    bot = commands.Bot(command_prefix='m!', intents=intents)
 
     """Events"""
     @bot.event
