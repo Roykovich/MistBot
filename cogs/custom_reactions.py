@@ -18,6 +18,80 @@ db = connection.cursor()
 # Create a table in custom_reactions.db if it doesn't exist
 db.execute('CREATE TABLE IF NOT EXISTS reactions (trigger text, response text, cr_id GUID)')
 
+
+class TriggersView(discord.ui.View):
+    # The current page of the playlist
+    current_page: int = 1
+    # The separator of the playlist, in this case is 10 tracks per page
+    separator: int = 10
+    triggers = db.execute('SELECT trigger, cr_id FROM reactions')
+
+    # Sends the playlist to the channel where the command was invoked from 
+    async def send(self, ctx):
+        self.message = await ctx.send(view=self)
+        await self.update_message(list(self.triggers)[:self.separator])
+
+    # Creates the embed of the playlist
+    async def create_embed(self, triggers):
+        embed = discord.Embed(title='Triggers', color=discord.Colour.dark_purple())
+        embed.description = ''
+
+        print(triggers)
+        for trigger in triggers:
+            embed.description += f'`{trigger[1]}` | {trigger[0]}\n'
+
+        return embed
+
+    # Updates the message of the playlist
+    async def update_message(self, data):
+        self.update_buttons()
+        embed = await self.create_embed(data)
+        await self.message.edit(embed=embed, view=self)
+
+    # Updates the buttons of the playlist
+    def update_buttons(self):
+        if self.current_page == 1:
+            self.previous.disabled = True
+            self.previous.style = discord.ButtonStyle.grey
+        else:
+            self.previous.disabled = False
+            self.previous.style = discord.ButtonStyle.primary
+        
+        if self.current_page == int(len(list(self.triggers)) / self.separator) + 1:
+            self.next.disabled = True
+            self.next.style = discord.ButtonStyle.grey
+        else:
+            self.next.disabled = False
+            self.next.style = discord.ButtonStyle.primary
+
+    # Gets the current page of the playlist
+    def get_current_page(self):
+        until_page = self.current_page * self.separator
+        from_page = until_page - self.separator
+
+        if self.current_page == 1:
+            from_page = 0
+            until_page = self.separator
+        
+        if self.current_page == int(len(list(self.triggers)) / self.separator) + 1:
+            from_page = self.current_page - 1 * self.separator - self.separator
+            until_page = len(self.triggers)
+
+        return list(self.triggers)[from_page:until_page]
+
+
+    @discord.ui.button(label='Anterior', emoji='⬅️', style=discord.ButtonStyle.gray, disabled=True)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current_page -= 1
+        await self.update_message(self.get_current_page())
+
+    @discord.ui.button(label='Siguiente', emoji='➡️', style=discord.ButtonStyle.primary)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.current_page += 1
+        await self.update_message(self.get_current_page())
+
 class CustomReactions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -97,7 +171,6 @@ class CustomReactions(commands.Cog):
             embed = discord.Embed(title='Reacción eliminada', description=f'`{cr_uuid}`', color=discord.Colour.dark_purple())
             
             await ctx.send(embed=embed)
-
             return
         except ValueError:
             await ctx.send(f'El id no es válido. Para revisar los ids usa `{self.bot.command_prefix}lcr`')
@@ -105,10 +178,8 @@ class CustomReactions(commands.Cog):
     
     @commands.command('lcr', help='Lists all the custom reactions')
     async def listcr(self, ctx, *args):
-        rows = db.execute('SELECT trigger, cr_id FROM reactions')
-        
-        for row in rows:
-            print(row[1], row[0])
+        view = TriggersView(timeout=15)
+        await view.send(ctx)
         return
                 
 
