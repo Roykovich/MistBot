@@ -1,6 +1,7 @@
 import discord
 import wavelink
 import re
+import typing
 from discord.ext import commands
 from discord import app_commands
 from wavelink.ext import spotify
@@ -41,6 +42,26 @@ def remove_all_items(view):
     for item in view.children:
         view.remove_item(item)
 
+async def play_autocomplete(
+    interaction: discord.Interaction, 
+    current: str
+    ) -> typing.List[app_commands.Choice[str]]:
+        if not current:
+            return []
+        
+        tracks = []
+        search = await wavelink.YouTubeTrack.search(current)
+
+        for track in search:
+            tracks.append(app_commands.Choice(name=track.title, value=track.title))
+        
+        if not tracks:
+            return [app_commands.Choice(name=current, value=current)]
+        
+        return tracks
+
+
+        
 class MusicExceptionHandler(app_commands.CheckFailure):
     ...
 
@@ -320,6 +341,11 @@ class Music(commands.Cog):
     ######################
     #      COMMANDS      #
     ######################
+    @app_commands.command(name='testplay', description='Prueba de autocompletado')
+    @app_commands.autocomplete(track=play_autocomplete)
+    async def testplay(self, interaction: discord.Interaction, track: str):
+        await interaction.response.send_message(content=f'{track}')
+
     @app_commands.command(name='play', description='Agrega el bot a un canal de voz y reproduce la canción que le pases')
     @check_voice()
     @app_commands.describe(query='La canción que quieres reproducir')
