@@ -10,7 +10,7 @@ class Media(commands.Cog):
     @commands.command(name='ef', help='fixear embeds de twitter, tiktok, reddit e instagram')
     async def tfix(self, ctx, *url: str):
         if not url:
-            messages = [message async for message in ctx.channel.history(limit=5)]
+            messages = [message async for message in ctx.channel.history(limit=10)]
             for message in messages[1:]:
                 if message.author.bot:
                     continue
