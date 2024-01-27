@@ -7,7 +7,7 @@ class Media(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='ef', help='fixear embeds de twitter, tiktok, reddit e instagram')
+    @commands.command(name='ef', help='fixear embeds de twitter, reddit e instagram')
     async def tfix(self, ctx, *url: str):
         if not url:
             messages = [message async for message in ctx.channel.history(limit=10)]
@@ -24,9 +24,6 @@ class Media(commands.Cog):
                     case 'twitter':
                         await ctx.send(content.replace('https://twitter.com/', 'https://fixvx.com/'))
                         return
-                    case 'tiktok':
-                        await ctx.send(content.replace('https://www.tiktok.com/', 'https://tiktxk.com/'))
-                        return
                     case 'reddit':
                         await ctx.send(content.replace('https://www.reddit.com/', 'https://rxddit.com/'))
                         return
@@ -36,9 +33,9 @@ class Media(commands.Cog):
                     case _:
                         continue
             
-            await ctx.send('No se encontro ningun link en los ultimos 5 mensajes.')
+            await ctx.send('No se encontro ningun link en los ultimos 10 mensajes.')
         
-        domain = re.search(r"(?:^http(?:s)?://)?(?:\w+\.)?(twitter|tiktok|reddit|instagram)\.(?:\w*)/.*", url[0])
+        domain = re.search(r"(?:^http(?:s)?://)?(?:\w+\.)?(twitter|reddit|instagram)\.(?:\w*)/.*", url[0])
 
         if not domain:
             await ctx.send('No se encontro ningun link.')
@@ -47,14 +44,12 @@ class Media(commands.Cog):
         match domain.group(1):
             case 'twitter':
                 await ctx.send(url[0].replace('https://twitter.com/', 'https://fixvx.com/'))
-            case 'tiktok':
-                await ctx.send(url[0].replace('https://www.tiktok.com/', 'https://tiktxk.com/'))
             case 'reddit':
                 await ctx.send(url[0].replace('https://www.reddit.com/', 'https://rxddit.com/'))
             case 'instagram':
                 await ctx.send(url[0].replace('https://www.instagram.com/', 'https://ddinstagram.com/'))
             case _:
-                await ctx.send('No se puede arreglar ese link. Solo se pueden arreglar links de Twitter, TikTok, Reddit e Instagram.')
+                await ctx.send('No se puede arreglar ese link. Solo se pueden arreglar links de Twitter, Reddit e Instagram.')
                 return
 
 async def setup(bot):
