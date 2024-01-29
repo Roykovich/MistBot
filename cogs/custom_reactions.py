@@ -106,9 +106,9 @@ class CustomReactions(commands.Cog):
         if message.content.startswith(self.bot.command_prefix):
             return
 
-        if re.search(r"([rg](ubén|uben|euben|uben|unerd|oy),? (arregla|repara|fixea|bichea|acomoda) [ts]u (maldit[ao]|put[ao]|verga?|estupid[ao])?\s?(mierda|vaina|verga|bot|perol|robot))", parsed):
+        if re.search(r"([rg](ubén|uben|euben|uben|unerd|oy),? (arregla|repara|fixea|bichea|acomoda|mejora|upgradea|optimiza|soluciona|resuelve) [ts]u (maldit[ao]|put[ao]|verga?|estupid[ao])?\s?(mierda|vaina|verga|bot|perol|robot))", parsed):
             await message.add_reaction('😡')
-            await message.channel.send('Esta ocupado.')
+            await message.channel.send('Está ocupado.')
             return
 
         link = re.search(r"(?:^http(?:s)?://)?(?:\w+\.)?(\w*)\.(?:\w*)/.*", parsed)
