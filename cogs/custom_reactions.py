@@ -18,6 +18,17 @@ db = connection.cursor()
 # Create a table in custom_reactions.db if it doesn't exist
 db.execute('CREATE TABLE IF NOT EXISTS reactions (trigger text, response text, cr_id GUID)')
 
+def marxismo(ideologia, verbo):
+    articulo = 'la' if ideologia == 'anarquía' or ideologia == 'anarquia' else 'el'
+    responses = [
+        f'Si {articulo} {ideologia} {verbo}, ¿Por qué la mayoria de este server se fue del país?',
+        f'¿{articulo.capitalize()} {ideologia} {verbo}? ¿Y por qué no lo hace en la mayoria de paises implementados?',
+        f'"""""""""""{verbo}"""""""""""',
+        f'¿Tú eres marico?'
+    ]
+
+    return random.choice(responses)
+
 
 class TriggersView(discord.ui.View):
     # The current page of the playlist
@@ -106,18 +117,26 @@ class CustomReactions(commands.Cog):
         if message.content.startswith(self.bot.command_prefix):
             return
 
+        # Tradition.
         if re.search(r"([rg](ubén|uben|euben|uben|unerd|oy),? (arregla|repara|fixea|bichea|acomoda|mejora|upgradea|optimiza|soluciona|resuelve) [ts]u (maldit[ao]|put[ao]|verga?|estupid[ao])?\s?(mierda|vaina|verga|bot|perol|robot))", parsed):
             await message.add_reaction('😡')
             await message.channel.send('Está ocupado.')
             return
 
+        # This is to format embed links
         link = re.search(r"(?:^http(?:s)?://)?(?:\w+\.)?(\w*)\.(?:\w*)/.*", parsed)
         if link:
             domain = link.group(1)
             if re.search(r"^(instagram|twitter|tiktok|reddit)$", domain):
                 await message.add_reaction('😦')
                 await message.channel.send(f'deberias probar el comando `{self.bot.command_prefix}ef` para arreglar ese link y que sea más accesible')
-
+        
+        # This is about ideologies, yes I'm Venezuelan, I fucking hate left-wing ideologies
+        estupidez = re.search("(?:el|la)? ?(socialismo|comunismo|anarqu[ii]a),? ?(?:si|sí)? ?(sirve|funciona|resuelve|workea|arregla)", parsed)
+        if estupidez:
+            await message.add_reaction('🤨')
+            await message.channel.send(marxismo(estupidez.group(1), estupidez.group(2)))
+            return
 
         # la coma en (parsed,) es para que sea una tupla, si no, no funciona, no se porque
         cr = db.execute('SELECT response FROM reactions WHERE trigger = ?', (parsed,)).fetchall()
