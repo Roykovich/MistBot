@@ -6,7 +6,8 @@ import settings
 
 # My cogs
 from cogs.basic import Basic
-from cogs.music import Music
+# from cogs.music import Music
+from cogs.musicv2 import Music
 
 def main():
     intents = discord.Intents.default()
@@ -18,12 +19,12 @@ def main():
     """Events"""
     @bot.event
     async def on_ready():
-        print(f'We have logged in as {bot.user}')
+        print(f'\n[+] We have logged in as {bot.user}\n')
 
         for cog_file in settings.COGS_DIR.glob('*.py'):
             if cog_file != "__init__.py":
                 await bot.load_extension(f'cogs.{cog_file.name[:-3]}')
-                print('Loaded cog: ' + cog_file.name[:-3])
+                print('[+] Loaded cog: ' + cog_file.name[:-3])
                 
         bot.tree.copy_global_to(guild=settings.GUILD_ID)
         await bot.tree.sync(guild=settings.GUILD_ID)
