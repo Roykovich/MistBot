@@ -3,8 +3,47 @@ import wavelink
 import re
 from typing import cast
 from discord.ext import commands
+from utils.formatTime import format_time
+from utils.removeAllItems import remove_all_items
+from utils.embedGenerator import music_embed_generator
 
 from settings import MUSIC_PASS as lavalink_password
+
+class MusicView(discord.ui.View):
+    paused:bool = False
+    skipper:bool = False
+
+    @discord.ui.button(label='parar', emoji='⏹️')
+    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.vc.queue.clear() # clears the queue
+        await self.vc.stop() # stops the player
+        self.clear_items() # clears the buttons
+        await interaction.response.edit_message(view=self) # updates the message
+
+    @discord.ui.button(label='Pausar', emoji='⏸️')
+    async def pause(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.paused:
+            await self.vc.pause(True)
+            self.children[1].label = 'Resumir'
+            self.children[1].emoji = '▶️'
+            self.paused = True
+        else:
+            await self.vc.pause(False)
+            self.children[1].label = 'Pausar'
+            self.children[1].emoji = '⏸️'
+            self.paused = False
+        
+        await interaction.response.edit_message(view=self)
+    
+    @discord.ui.button(label='Siguiente', emoji='⏭️')
+    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.vc.queue.is_empty:
+            self.clear_items()
+            # TODO
+        
+        await self.vc.skip()
+        self.clear_items()
+
 
 class Music(commands.Cog):
     vc : wavelink.Player = None
@@ -25,12 +64,40 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
-        print(f'[+] Track started: {payload.track.title}')
-        print(f'link: {payload.track.uri}')
+        track = payload.track
+        duration = format_time(track.length) if not track.is_stream else '🎙 live'
+        thumbnail = track.artwork
+
+        embed = discord.Embed(
+            colour= discord.Colour.blurple(),
+            description= f'[{track.title}]({track.uri})',
+        )
+        embed.set_author(name='🎵 | Suena')
+        embed.add_field(name='Duración:', value=f'`{duration}`', inline=True)
+        embed.add_field(name='Autor:', value=f'`{track.author}`', inline=True)
+        embed.set_thumbnail(url=thumbnail)
+
+        view_timeout = track.length / 1000 if not track.is_stream else None
+        view = MusicView(timeout=view_timeout)
+
+        view_message = await self.music_channel.send(embed=embed, view=view)
+        view.vc = self.vc
+        self.view_message = view_message
+        self.view = view
+        
+        print(f'[+] Track started: {track.title}')
+
     
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
+        if self.vc.queue.is_empty and not self.vc.playing:
+            channel = self.vc.channel.mention
+            await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
+        
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
         print(f'[+] Track ended: {payload.track.title}')
+        print(f'[!] reason: {payload.reason}')
     
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
@@ -51,7 +118,7 @@ class Music(commands.Cog):
         
         # join the query into a single string
         formated_query = " ".join(query)
-        print(formated_query)
+
         # check if the user is in a voice channel
         if not ctx.author.voice:
             await ctx.send('Necesitas estar en un canal de voz para usar este comando')
