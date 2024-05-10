@@ -13,7 +13,7 @@ class MusicView(discord.ui.View):
     paused:bool = False
     skipper:bool = False
 
-    @discord.ui.button(label='parar', emoji='⏹️')
+    @discord.ui.button(label='Parar', emoji='⏹️')
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.vc.queue.clear() # clears the queue
         await self.vc.stop() # stops the player
@@ -22,17 +22,11 @@ class MusicView(discord.ui.View):
 
     @discord.ui.button(label='Pausar', emoji='⏸️')
     async def pause(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.paused:
-            await self.vc.pause(True)
-            self.children[1].label = 'Resumir'
-            self.children[1].emoji = '▶️'
-            self.paused = True
-        else:
-            await self.vc.pause(False)
-            self.children[1].label = 'Pausar'
-            self.children[1].emoji = '⏸️'
-            self.paused = False
-        
+        # pauses the player if it's playing and changes the button label
+        await self.vc.pause(True if not self.paused else False)
+        self.children[1].label = 'Resumir' if not self.paused else 'Pausar'
+        self.children[1].emoji = '▶️' if not self.paused else '⏸️'
+        self.paused = not self.paused
         await interaction.response.edit_message(view=self)
     
     @discord.ui.button(label='Siguiente', emoji='⏭️')
@@ -113,7 +107,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *query) -> None:
         # if no query is provided return
         if len(query) < 1:
-            await ctx.send('No se ha especificado ninguna canción')
+            await ctx.send(embed=music_embed_generator('No se ha especificado ninguna canción'))
             return
         
         # join the query into a single string
@@ -121,7 +115,7 @@ class Music(commands.Cog):
 
         # check if the user is in a voice channel
         if not ctx.author.voice:
-            await ctx.send('Necesitas estar en un canal de voz para usar este comando')
+            await ctx.send(embed=music_embed_generator('Debes estar en un canal de voz para usar este comando'))
             return
             
         # if the bot is not connected to a voice channel
@@ -131,11 +125,11 @@ class Music(commands.Cog):
                 self.vc = await ctx.author.voice.channel.connect(cls=wavelink.Player)
             # if the user is not connected to a voice channel
             except AttributeError:
-                await ctx.send('No estas conectado a un canal de voz')
+                await ctx.send(embed=music_embed_generator('No estas conectado a un canal de voz'))
                 return
             # if the bot can't connect to the voice channel
             except discord.ClientException:
-                await ctx.send('No me pude conectar a este canal de voz')
+                await ctx.send(embed=music_embed_generator('No me pude conectar a este canal de voz'))
                 return
         
         # this makes the bot play the next song in the queue when the current one ends
@@ -146,7 +140,7 @@ class Music(commands.Cog):
         if not self.music_channel:
             self.music_channel = ctx.channel
         elif self.music_channel != ctx.channel:
-            await ctx.send(f'No puedes usar este comando en otro canal porque el bot ya está en uso en {self.music_channel.mention}')
+            await ctx.send(embed=music_embed_generator(f'No puedes usar este comando en otro canal porque el bot ya está en uso en {self.music_channel.mention}'))
             return
                 
         tracks: wavelink.Search = await wavelink.Playable.search(formated_query)
@@ -160,7 +154,9 @@ class Music(commands.Cog):
         else:
             track: wavelink.Playable = tracks[0]
             await self.vc.queue.put_wait(track)
-            await ctx.send('query: ' + formated_query)
+            duration = format_time(track.length) if not track.is_stream else '🎙 live'
+            description = f'Song [{track.title}]({track.uri}) added to the playlist {duration}'
+            await ctx.send(embed=music_embed_generator(description))
         
         if not self.vc.playing:
             self.vc = cast(wavelink.Player, ctx.voice_client)
@@ -168,28 +164,55 @@ class Music(commands.Cog):
             
     @commands.command(name='pause')
     async def pause(self, ctx):
+        if ctx.author.voice.channel != self.vc.channel:
+            await ctx.send('No estas en el mismo canal de voz que el bot')
+            return
+
         if not self.vc:
             await ctx.send('No hay ninguna canción sonando en este momento')
             return
+        
         await self.vc.pause(True)
-        await ctx.send('Pausado')
+        self.view.children[1].label = 'Resumir'
+        self.view.children[1].emoji = '▶️'
+        self.view.paused = True
 
     @commands.command(name='resume')
     async def resume(self, ctx):
+        if ctx.author.voice.channel != self.vc.channel:
+            await ctx.send('No estas en el mismo canal de voz que el bot')
+            return
+        
         if not self.vc:
             await ctx.send('No hay ninguna canción sonando en este momento')
             return
+        
         await self.vc.pause(False)
-        await ctx.send('Reanudado')
+        self.view.children[1].label = 'Pausar'
+        self.view.children[1].emoji = '⏸️'
+        self.view.paused = False
 
     @commands.command(name='current')
     async def current(self, ctx):
         if not self.vc:
             await ctx.send('No hay ninguna canción sonando en este momento')
             return
-        print(self.vc.playing)
-        print(type(self.vc))
-        await ctx.send(f'Now playing: {self.vc.current}')
+        
+        track = self.vc.current
+        current_position = format_time(int(self.vc.position))
+        duration = format_time(track.length) if not track.is_stream else '🎙 live'
+        thumbnail = track.artwork
+
+        embed = discord.Embed(
+            colour = discord.Colour.dark_purple(),
+            description = f'[{track.title}]({track.uri})'
+        )
+        embed.set_author(name='🎵 | Suena')
+        embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
+        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
+        embed.set_thumbnail(url=thumbnail)
+
+        await ctx.send(embed=embed)
 
     @commands.command(name='playlist')
     async def playlist(self, ctx):
@@ -204,20 +227,27 @@ class Music(commands.Cog):
     
     @commands.command(name='skip')
     async def skip(self, ctx):
+        if ctx.author.voice.channel != self.vc.channel:
+            await ctx.send('No estas en el mismo canal de voz que el bot')
+            return
+        
         if not self.vc:
             await ctx.send('No hay ninguna canción sonando en este momento')
             return
+        
         await self.vc.skip()
-        await ctx.send('Saltando canción...')
 
     @commands.command(name='stop')
     async def stop(self, ctx):
+        if ctx.author.voice.channel != self.vc.channel:
+            await ctx.send('No estas en el mismo canal de voz que el bot')
+            return
+        
         if not self.vc:
             await ctx.send('No hay ninguna canción sonando en este momento')
             return
+        
         await self.vc.stop()
-        await ctx.send('Deteniendo...')
-
 
 async def setup(bot):
     music_bot = Music(bot)
