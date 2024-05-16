@@ -13,6 +13,12 @@ class MusicView(discord.ui.View):
     paused:bool = False
     skipper:bool = False
 
+    @discord.ui.button(label='Atrasar', emoji='⏪')
+    async def backward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        new_position = self.vc.position - (15 * 1000)
+        await self.vc.seek(new_position)
+        await interaction.response.edit_message(view=self)
+
     @discord.ui.button(label='Parar', emoji='⏹️')
     async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.vc.queue.clear() # clears the queue
@@ -28,15 +34,25 @@ class MusicView(discord.ui.View):
         self.children[1].emoji = '▶️' if not self.paused else '⏸️'
         self.paused = not self.paused
         await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(label='Adelantar', emoji='⏩')
+    async def forward(self, interaction: discord.Interaction, button: discord.ui.Button):
+        new_position = self.vc.position + (15 * 1000)
+        await self.vc.seek(new_position)
+        await interaction.response.edit_message(view=self)
     
     @discord.ui.button(label='Siguiente', emoji='⏭️')
     async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.vc.queue.is_empty:
+            channel = self.vc.channel.mention
             self.clear_items()
-            # TODO
+            await interaction.response.edit_message(view=self)
+            await interaction.channel.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
+            return
         
         await self.vc.skip()
         self.clear_items()
+        await interaction.response.edit_message(view=self)
 
 
 class Music(commands.Cog):
