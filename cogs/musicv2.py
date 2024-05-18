@@ -267,7 +267,23 @@ class Music(commands.Cog):
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
         await self.vc.stop()
+        await ctx.send(embed=music_embed_generator('Playlist detenida'))
+
+    @commands.command(name='disconnect')
+    async def disconnect(self, ctx):
+        if ctx.author.voice.channel != self.vc.channel:
+            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
+            return
         
+        if not self.vc:
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+            return
+        
+        self.vc.queue.clear()
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
+        await self.vc.disconnect(force=True)
+        await ctx.send(embed=music_embed_generator('Bot desconectado del canal de voz'))        
 
 async def setup(bot):
     music_bot = Music(bot)
