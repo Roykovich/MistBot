@@ -181,11 +181,11 @@ class Music(commands.Cog):
     @commands.command(name='pause')
     async def pause(self, ctx):
         if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send('No estas en el mismo canal de voz que el bot')
+            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
             return
 
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
         await self.vc.pause(True)
@@ -196,11 +196,11 @@ class Music(commands.Cog):
     @commands.command(name='resume')
     async def resume(self, ctx):
         if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send('No estas en el mismo canal de voz que el bot')
+            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
             return
         
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
         await self.vc.pause(False)
@@ -211,7 +211,7 @@ class Music(commands.Cog):
     @commands.command(name='current')
     async def current(self, ctx):
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
         track = self.vc.current
@@ -233,7 +233,7 @@ class Music(commands.Cog):
     @commands.command(name='playlist')
     async def playlist(self, ctx):
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         queue = ""
         for track in self.vc.queue:
@@ -244,11 +244,11 @@ class Music(commands.Cog):
     @commands.command(name='skip')
     async def skip(self, ctx):
         if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send('No estas en el mismo canal de voz que el bot')
+            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
             return
         
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
         await self.vc.skip()
@@ -256,14 +256,18 @@ class Music(commands.Cog):
     @commands.command(name='stop')
     async def stop(self, ctx):
         if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send('No estas en el mismo canal de voz que el bot')
+            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
             return
         
         if not self.vc:
-            await ctx.send('No hay ninguna canción sonando en este momento')
+            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
+        self.vc.queue.clear()
+        remove_all_items(self.view)
+        await self.view_message.edit(view=self.view)
         await self.vc.stop()
+        
 
 async def setup(bot):
     music_bot = Music(bot)
