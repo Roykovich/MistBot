@@ -244,13 +244,11 @@ class Music(commands.Cog):
         if not self.vc:
             # try to connect to the voice channel
             try:
-                self.vc = await ctx.author.voice.channel.connect(cls=wavelink.Player)
-            # if the user is not connected to a voice channel
-            except AttributeError:
+                self.vc = await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=True)   
+            except AttributeError: # if the user is not connected to a voice channel
                 await ctx.send(embed=music_embed_generator('No estas conectado a un canal de voz'))
                 return
-            # if the bot can't connect to the voice channel
-            except discord.ClientException:
+            except discord.ClientException: # if the bot can't connect to the voice channel
                 await ctx.send(embed=music_embed_generator('No me pude conectar a este canal de voz'))
                 return
         
