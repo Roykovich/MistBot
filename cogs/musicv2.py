@@ -30,8 +30,8 @@ class MusicView(discord.ui.View):
     async def pause(self, interaction: discord.Interaction, button: discord.ui.Button):
         # pauses the player if it's playing and changes the button label
         await self.vc.pause(True if not self.paused else False)
-        self.children[1].label = 'Resumir' if not self.paused else 'Pausar'
-        self.children[1].emoji = '▶️' if not self.paused else '⏸️'
+        self.children[2].label = 'Resumir' if not self.paused else 'Pausar'
+        self.children[2].emoji = '▶️' if not self.paused else '⏸️'
         self.paused = not self.paused
         await interaction.response.edit_message(view=self)
 
@@ -160,9 +160,18 @@ class Music(commands.Cog):
         nodes = [wavelink.Node(uri='http://localhost:2333', password=lavalink_password)]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
+    async def reset_player(self) -> None:
+        self.vc = None
+        self.music_channel = None
+        self.view = None
+        self.view_message = None
+
+    ########################
+    # - - - EVENTS - - - - #
+    ########################
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        print(f'Node [[ {payload.node.identifier} ]] is ready!')
+        print(f'\nNode [[ {payload.node.identifier} ]] is ready!')
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
@@ -187,25 +196,30 @@ class Music(commands.Cog):
         self.view_message = view_message
         self.view = view
         
-        print(f'[+] Track started: {track.title}')
+        print(f'\n[+] Track started: {track.title}')
 
-    
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
-        if self.vc.queue.is_empty and not self.vc.playing:
-            channel = self.vc.channel.mention
-            await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
-        
+        print(f'\n[+] Track ended: {payload.track.title}')
+        print(f'[!] reason: {payload.reason}\n')
+
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
-        print(f'[+] Track ended: {payload.track.title}')
-        print(f'[!] reason: {payload.reason}')
-    
+        
+        if self.vc.queue.is_empty and not self.vc.playing:
+            await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+
+        if payload.reason == 'stopped':
+            await self.vc.disconnect(force=True)
+            await self.reset_player()
+            return
+
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
         print(f'[+] Player in guild: {player.guild.name} is inactive.')
         print(f'[+] Player disconnected from: {player.channel}\n')
-        await player.disconnect()
+        await player.disconnect(force=True)
+        await self.reset_player()
         
 
     ########################
@@ -217,7 +231,7 @@ class Music(commands.Cog):
         if len(query) < 1:
             await ctx.send(embed=music_embed_generator('No se ha especificado ninguna canción'))
             return
-        
+
         # join the query into a single string
         formated_query = " ".join(query)
 
@@ -282,8 +296,8 @@ class Music(commands.Cog):
             return
         
         await self.vc.pause(True)
-        self.view.children[1].label = 'Resumir'
-        self.view.children[1].emoji = '▶️'
+        self.view.children[2].label = 'Resumir'
+        self.view.children[2].emoji = '▶️'
         self.view.paused = True
 
     @commands.command(name='resume')
@@ -343,7 +357,7 @@ class Music(commands.Cog):
         if not self.vc:
             await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
-        
+
         await self.vc.skip()
 
     @commands.command(name='stop')
