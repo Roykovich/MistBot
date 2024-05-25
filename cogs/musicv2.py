@@ -1,6 +1,5 @@
 import discord
 import wavelink
-import re
 from typing import cast
 from discord.ext import commands
 from utils.formatTime import format_time
@@ -293,6 +292,10 @@ class Music(commands.Cog):
             await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
+        if self.vc.paused:
+            await ctx.send(embed=music_embed_generator('El bot ya está en pausa'))
+            return
+
         await self.vc.pause(True)
         self.view.children[2].label = 'Resumir'
         self.view.children[2].emoji = '▶️'
@@ -308,9 +311,13 @@ class Music(commands.Cog):
             await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
         
+        if not self.vc.paused:
+            await ctx.send(embed=music_embed_generator('El bot ya está reproduciendo música'))
+            return
+
         await self.vc.pause(False)
-        self.view.children[1].label = 'Pausar'
-        self.view.children[1].emoji = '⏸️'
+        self.view.children[2].label = 'Pausar'
+        self.view.children[2].emoji = '⏸️'
         self.view.paused = False
 
     @commands.command(name='current')
