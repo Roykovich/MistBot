@@ -127,7 +127,7 @@ class CustomReactions(commands.Cog):
         link = re.search(r"(?:^http(?:s)?://)?(?:\w+\.)?(\w*)\.(?:\w*)/.*", parsed)
         if link:
             domain = link.group(1)
-            if re.search(r"^(instagram|twitter|tiktok|reddit)$", domain):
+            if re.search(r"^(instagram|twitter|reddit|x)$", domain):
                 await message.add_reaction('😦')
                 await message.channel.send(f'deberias probar el comando `{self.bot.command_prefix}ef` para arreglar ese link y que sea más accesible')
         
