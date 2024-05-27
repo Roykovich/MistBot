@@ -41,6 +41,7 @@ class PlaylistView(discord.ui.View):
             color=discord.Colour.dark_purple(), 
             description=description
         )
+        embed.set_thumbnail(url=thumbnail)
 
         return embed
 
