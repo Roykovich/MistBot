@@ -77,10 +77,12 @@ class MusicView(discord.ui.View):
             channel = self.vc.channel.mention
             self.clear_items()
             await interaction.response.edit_message(view=self)
+            self.vc.queue.clear()
+            await self.vc.stop()
             await interaction.channel.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
             return
         
-        await self.vc.skip()
+        await self.vc.play(self.vc.queue.get())
         self.clear_items()
         await interaction.response.edit_message(view=self)
 
@@ -400,8 +402,17 @@ class Music(commands.Cog):
         if not self.vc:
             await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
             return
+        
+        if self.vc.queue.is_empty:
+            channel = self.vc.channel.mention
+            remove_all_items(self.view)
+            await self.view_message.edit(view=self.view)            
+            self.vc.queue.clear()
+            await self.vc.stop()
+            await ctx.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
+            return
 
-        await self.vc.skip()
+        await self.vc.play(self.vc.queue.get())
 
     @commands.command(name='stop')
     async def stop(self, ctx):
