@@ -5,15 +5,17 @@ from discord.ext import commands
 from utils.formatTime import format_time
 from utils.removeAllItems import remove_all_items
 from utils.embedGenerator import music_embed_generator
-from settings import MUSIC_PASS as lavalink_password
+from utils.nowPlaying import now_playing
 from views.MusicView import MusicView
 from views.PlaylistView import PlaylistView
+from settings import MUSIC_PASS as lavalink_password
 
 class Music(commands.Cog):
     vc : wavelink.Player = None
     music_channel = None
     view = None
     view_message = None
+    
 
     def __init__(self, bot):
         self.bot = bot
@@ -28,9 +30,9 @@ class Music(commands.Cog):
         self.view = None
         self.view_message = None
 
-    ########################
-    # - - - EVENTS - - - - #
-    ########################
+    ###############################
+    # - - - - E V E N T S - - - - #
+    ###############################
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
         print(f'\nNode [[ {payload.node.identifier} ]] is ready!')
@@ -38,17 +40,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         track = payload.track
-        duration = format_time(track.length) if not track.is_stream else '🎙 live'
-        thumbnail = track.artwork
-
-        embed = discord.Embed(
-            colour= discord.Colour.blurple(),
-            description= f'[{track.title}]({track.uri})',
-        )
-        embed.set_author(name='🎵 | Suena')
-        embed.add_field(name='Duración:', value=f'`{duration}`', inline=True)
-        embed.add_field(name='Autor:', value=f'`{track.author}`', inline=True)
-        embed.set_thumbnail(url=thumbnail)
+        embed = now_playing(track)
 
         view_timeout = track.length / 1000 if not track.is_stream else None
         view = MusicView(timeout=view_timeout)
@@ -85,9 +77,9 @@ class Music(commands.Cog):
         await self.reset_player()
         
 
-    ########################
-    # - - - COMMANDS - - - #
-    ########################
+    ###################################
+    # - - - - C O M M A N D S - - - - #
+    ###################################
     @commands.command(name='play')
     async def play(self, ctx, *query) -> None:
         # if no query is provided return
@@ -162,7 +154,7 @@ class Music(commands.Cog):
 
         await self.vc.pause(True)
         self.view.children[2].label = 'Resumir'
-        self.view.children[2].emoji = '▶️'
+        self.view.children[2].emoji = '<:mb_resume:1244545666982744119>'
         self.view.paused = True
 
     @commands.command(name='resume')
@@ -181,7 +173,7 @@ class Music(commands.Cog):
 
         await self.vc.pause(False)
         self.view.children[2].label = 'Pausar'
-        self.view.children[2].emoji = '⏸️'
+        self.view.children[2].emoji = '<:mb_pause:1244545668563861625>'
         self.view.paused = False
 
     @commands.command(name='current')
@@ -192,17 +184,8 @@ class Music(commands.Cog):
         
         track = self.vc.current
         current_position = format_time(int(self.vc.position))
-        duration = format_time(track.length) if not track.is_stream else '🎙 live'
-        thumbnail = track.artwork
 
-        embed = discord.Embed(
-            colour = discord.Colour.dark_purple(),
-            description = f'[{track.title}]({track.uri})'
-        )
-        embed.set_author(name='🎵 | Suena')
-        embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
-        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
-        embed.set_thumbnail(url=thumbnail)
+        embed = now_playing(track, current=True, position=current_position)
 
         await ctx.send(embed=embed)
 
