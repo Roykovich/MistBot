@@ -1,5 +1,6 @@
 import discord
 import wavelink
+import datetime
 from typing import cast
 from discord.ext import commands
 from utils.formatTime import format_time
@@ -15,6 +16,7 @@ class Music(commands.Cog):
     music_channel = None
     view = None
     view_message = None
+    user_list = []
     
 
     def __init__(self, bot):
@@ -40,7 +42,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         track = payload.track
-        embed = now_playing(track)
+        embed = now_playing(track, user=self.user_list[0] if self.user_list else None)
+        self.user_list.pop(0)
 
         view_timeout = track.length / 1000 if not track.is_stream else None
         view = MusicView(timeout=view_timeout)
@@ -122,16 +125,31 @@ class Music(commands.Cog):
 
         if not tracks:
             await ctx.send(f'{ctx.author.mention} ninguna pista fue encontrada con: `{formated_query}`')
+
+        # This is the user object that will be added to the user_list
+        # adding the user to the user_list is useful to display the user's name and avatar in the playlist view
+        user = await self.bot.fetch_user(ctx.author.id)
+        nick = ctx.author.nick if ctx.author.nick else user.display_name
+        username = user.display_name if ctx.author.nick else ctx.author.name
+        user_object = {
+            "name": f'{nick} ({username})', 
+            "pic": user.display_avatar.url, 
+            "timestamp": datetime.datetime.now()
+        }
         
         if isinstance(tracks, wavelink.Playlist):
             added: int = await self.vc.queue.put_wait(tracks)
             link = f'[{tracks.name}]({tracks.url})'
+            # This codes adds the user object to the user_list multiple times
+            self.user_list.extend([user_object] * added) # the below code is the same as this one
+            # self.user_list.extend(user_object for _ in range(added))
             await ctx.send(embed=music_embed_generator(f'Playlist {link} (**{added}** songs) added to the queue'))
         else:
             track: wavelink.Playable = tracks[0]
             await self.vc.queue.put_wait(track)
             duration = format_time(track.length) if not track.is_stream else '🎙 live'
             description = f'Song [{track.title}]({track.uri}) added to the playlist {duration}'
+            self.user_list.append(user_object)
             await ctx.send(embed=music_embed_generator(description))
         
         if not self.vc.playing:
@@ -185,7 +203,7 @@ class Music(commands.Cog):
         track = self.vc.current
         current_position = format_time(int(self.vc.position))
 
-        embed = now_playing(track, current=True, position=current_position)
+        embed = now_playing(track, user=self.user_list[0] if self.user_list else None, current=True, position=current_position)
 
         await ctx.send(embed=embed)
 

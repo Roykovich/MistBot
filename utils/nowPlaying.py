@@ -2,15 +2,21 @@ import discord
 import wavelink
 from utils.formatTime import format_time
 
-def now_playing(track: wavelink.Playable, current: bool = False, position: int = 0):
+def now_playing(track: wavelink.Playable, user = None, current: bool = False, position: int = 0):
     duration = format_time(track.length) if not track.is_stream else '🎙 live'
     thumbnail = track.artwork
 
     embed = discord.Embed(
         colour = discord.Colour.blurple(),
-        description = f'[{track.title}]({track.uri})'
+        description = f'[{track.title}]({track.uri})',
+        timestamp = user["timestamp"] if user else None
     )
-    embed.set_author(name='🎵 | Ahora suena')
+
+    if user:
+        embed.set_author(name=f'🎵 | Ahora suena', icon_url=user["pic"])
+        embed.set_footer(text=f'Solicitado por {user["name"]}')
+    else:
+        embed.set_author(name='🎵 | Ahora suena')
 
     if current:
         embed.add_field(name='Duración', value=f'`{position}/{duration}`', inline=True)

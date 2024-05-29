@@ -23,6 +23,7 @@ class RemoveTrackModal(discord.ui.Modal, title='Eliminar canción'):
         message = f'La canción **{self.vc.queue.peek(index)}** ha sido eliminada.'
 
         self.vc.queue.delete(index) # deletes the track
+        self.user_list.pop(index) # deletes the user that requested the track
         await interaction.response.send_message(f'indice: {message}', ephemeral=True)
 
 
