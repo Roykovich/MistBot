@@ -59,7 +59,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
         print(f'\n[+] Track ended: {payload.track.title}')
-        print(f'[!] reason: {payload.reason}\n')
+        print(f'[!] reason: {payload.reason}')
 
         remove_all_items(self.view)
         await self.view_message.edit(view=self.view)
