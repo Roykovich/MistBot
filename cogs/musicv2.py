@@ -75,8 +75,8 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
-        print(f'[+] Player in guild: {player.guild.name} is inactive.')
-        print(f'[+] Player disconnected from: {player.channel}\n')
+        print(f'\n[+] Player in guild: {player.guild.name} is inactive.')
+        print(f'[+] Player disconnected from: {player.channel}')
         await player.disconnect(force=True)
         await self.reset_player()
         
