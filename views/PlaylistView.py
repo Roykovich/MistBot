@@ -34,7 +34,7 @@ class PlaylistView(discord.ui.View):
         description = f'**Ahora suena:**\n[{current_track} - {current_track.author}]({current_track.uri})\n**Duración:**\n`{current_position}/{duration}`\n\n**Playlist:**\n'
         
         for i, track in enumerate(tracks):
-            description += f'`[{i}]`丨**{track.title}**\n'
+            description += f'`[{i}]`丨**{track.title} -** `{track.author}`\n'
 
         embed = discord.Embed(
             title=f"Página {self.current_page} / {int(len(self.vc.queue) / self.separator) + 1}",
