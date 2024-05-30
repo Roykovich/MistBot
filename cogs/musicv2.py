@@ -143,7 +143,7 @@ class Music(commands.Cog):
             # This codes adds the user object to the user_list multiple times
             self.user_list.extend([user_object] * added) # the below code is the same as this one
             # self.user_list.extend(user_object for _ in range(added))
-            await ctx.send(embed=music_embed_generator(f'Playlist {link} (**{added}** songs) added to the queue'))
+            await ctx.send(embed=music_embed_generator(f'Playlist {link} (**{added}** songs) ha sido agregada a la cola'))
         else:
             track: wavelink.Playable = tracks[0]
             await self.vc.queue.put_wait(track)
