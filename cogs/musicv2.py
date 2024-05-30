@@ -51,6 +51,7 @@ class Music(commands.Cog):
         view_message = await self.music_channel.send(embed=embed, view=view)
         view.vc = self.vc
         view.music_channel = self.music_channel
+        view.user_list = self.user_list
         self.view_message = view_message
         self.view = view
         

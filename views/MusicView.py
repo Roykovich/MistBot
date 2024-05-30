@@ -2,6 +2,7 @@ import discord
 from utils.embedGenerator import music_embed_generator
 from views.PlaylistView import PlaylistView
 from utils.formatTime import format_time
+from utils.nowPlaying import now_playing
 
 
 class MusicView(discord.ui.View):
@@ -52,17 +53,7 @@ class MusicView(discord.ui.View):
         
         track = self.vc.queue.peek()
         current_position = format_time(int(self.vc.position))
-        duration = format_time(track.length) if not track.is_stream else '🎙 live'
-        thumbnail = track.artwork
-
-        embed = discord.Embed(
-            colour = discord.Colour.dark_purple(),
-            description = f'[{track.title}]({track.uri})'
-        )
-        embed.set_author(name='🎵 | Suena')
-        embed.add_field(name='Duración', value=f'`{current_position}/{duration}`', inline=True)
-        embed.add_field(name='autor', value=f'`{track.author}`', inline=True)
-        embed.set_thumbnail(url=thumbnail)
+        embed = now_playing(track, user=self.user_list[0] if self.user_list else None, current=True, position=current_position, peek=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
