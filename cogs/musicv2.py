@@ -148,7 +148,7 @@ class Music(commands.Cog):
             track: wavelink.Playable = tracks[0]
             await self.vc.queue.put_wait(track)
             duration = format_time(track.length) if not track.is_stream else '🎙 live'
-            description = f'Song [{track.title}]({track.uri}) added to the playlist {duration}'
+            description = f'Se ha agregado [{track.title}]({track.uri}) **[{duration}]** de `{track.author}`'
             self.user_list.append(user_object)
             await ctx.send(embed=music_embed_generator(description))
         
