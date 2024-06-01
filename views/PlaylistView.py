@@ -1,5 +1,5 @@
 import discord
-from utils.formatTime import format_time
+from utils.FormatTime import format_time
 from modals.RemoveTrackModal import RemoveTrackModal
 
 class PlaylistView(discord.ui.View):

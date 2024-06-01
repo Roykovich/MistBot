@@ -1,6 +1,6 @@
 import discord
 import wavelink
-from utils.formatTime import format_time
+from utils.FormatTime import format_time
 
 def now_playing(track: wavelink.Playable, user = None, current: bool = False, position: int = 0, peek: bool = False):
     duration = format_time(track.length) if not track.is_stream else '🎙 live'

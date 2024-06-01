@@ -1,8 +1,8 @@
 import discord
-from utils.embedGenerator import music_embed_generator
+from utils.EmbedGenerator import music_embed_generator
 from views.PlaylistView import PlaylistView
-from utils.formatTime import format_time
-from utils.nowPlaying import now_playing
+from utils.FormatTime import format_time
+from utils.NowPlaying import now_playing
 
 
 class MusicView(discord.ui.View):
