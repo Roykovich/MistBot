@@ -3,10 +3,10 @@ import wavelink
 import datetime
 from typing import cast
 from discord.ext import commands
-from utils.formatTime import format_time
-from utils.removeAllItems import remove_all_items
-from utils.embedGenerator import music_embed_generator
-from utils.nowPlaying import now_playing
+from utils.FormatTime import format_time
+from utils.RemoveAllItems import remove_all_items
+from utils.EmbedGenerator import music_embed_generator
+from utils.NowPlaying import now_playing
 from views.MusicView import MusicView
 from views.PlaylistView import PlaylistView
 from settings import MUSIC_PASS as lavalink_password
@@ -17,6 +17,8 @@ class Music(commands.Cog):
     view = None
     view_message = None
     user_list = []
+
+    players: dict = {}
     
 
     def __init__(self, bot):
@@ -26,11 +28,14 @@ class Music(commands.Cog):
         nodes = [wavelink.Node(uri='http://localhost:2333', password=lavalink_password)]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
-    async def reset_player(self) -> None:
-        self.vc = None
-        self.music_channel = None
-        self.view = None
-        self.view_message = None
+    async def reset_player(self, id) -> None:
+        self.players[id] = {
+            'vc': None,
+            'music_channel': None,
+            'user_list': [],
+            'view': None,
+            'view_message': None
+        }
 
     ###############################
     # - - - - E V E N T S - - - - #
@@ -43,17 +48,25 @@ class Music(commands.Cog):
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         track = payload.track
         embed = now_playing(track, user=self.user_list[0] if self.user_list else None)
-        self.user_list.pop(0)
+        # self.user_list.pop(0)
+        self.players[str(payload.player.guild.id)]['user_list'].pop(0)
 
         view_timeout = track.length / 1000 if not track.is_stream else None
         view = MusicView(timeout=view_timeout)
 
-        view_message = await self.music_channel.send(embed=embed, view=view)
-        view.vc = self.vc
-        view.music_channel = self.music_channel
-        view.user_list = self.user_list
-        self.view_message = view_message
-        self.view = view
+        # view_message = await self.music_channel.send(embed=embed, view=view)
+        view_message = await self.players[str(payload.player.guild.id)]['music_channel'].send(embed=embed, view=view)
+        # view.vc = self.vc
+        view.vc = payload.player
+        # view.music_channel = self.music_channel
+        view.music_channel = self.players[str(payload.player.guild.id)]['music_channel']
+        # view.user_list = self.user_list
+        view.user_list = self.players[str(payload.player.guild.id)]['user_list']
+        
+        # self.view_message = view_message
+        self.players[str(payload.player.guild.id)]['view_message'] = view_message
+        # self.view = view
+        self.players[str(payload.player.guild.id)]['view'] = view
         
         print(f'\n[+] Track started: {track.title}')
 
@@ -62,15 +75,23 @@ class Music(commands.Cog):
         print(f'\n[+] Track ended: {payload.track.title}')
         print(f'[!] reason: {payload.reason}')
 
-        remove_all_items(self.view)
-        await self.view_message.edit(view=self.view)
+        # remove_all_items(self.view)
+        remove_all_items(self.players[str(payload.player.guild.id)]['view'])
+        # await self.view_message.edit(view=self.view)
+        await self.players[str(payload.player.guild.id)]['view_message'].edit(view=self.players[str(payload.player.guild.id)]['view'])
         
-        if self.vc.queue.is_empty and not self.vc.playing:
-            await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        # if self.vc.queue.is_empty and not self.vc.playing:
+        #     await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        if self.players[str(payload.player.guild.id)]['vc'].queue.is_empty and not self.players[str(payload.player.guild.id)]['vc'].playing:
+            await self.players[str(payload.player.guild.id)]['music_channel'].send(embed=music_embed_generator(f'🎼 La playlist termino.'))
 
+        # if payload.reason == 'stopped':
+        #     await self.vc.disconnect(force=True)
+        #     await self.reset_player()
+        #     return
         if payload.reason == 'stopped':
-            await self.vc.disconnect(force=True)
-            await self.reset_player()
+            await self.players[str(payload.player.guild.id)]['vc'].disconnect(force=True)
+            await self.reset_player(payload.player.guild.id)
             return
 
     @commands.Cog.listener()
@@ -78,7 +99,7 @@ class Music(commands.Cog):
         print(f'\n[+] Player in guild: {player.guild.name} is inactive.')
         print(f'[+] Player disconnected from: {player.channel}')
         await player.disconnect(force=True)
-        await self.reset_player()
+        await self.reset_player(player.guild.id)
         
 
     ###################################
@@ -98,12 +119,26 @@ class Music(commands.Cog):
         if not ctx.author.voice:
             await ctx.send(embed=music_embed_generator('Debes estar en un canal de voz para usar este comando'))
             return
-            
+        
+        guild_id = str(ctx.guild.id)
+
+        # if the guild_id is not in the players dictionary, add it
+        if not self.players.get(guild_id): 
+            self.players[guild_id] = {}
+
         # if the bot is not connected to a voice channel
-        if not self.vc:
+        if not self.players[guild_id].get('vc'):
             # try to connect to the voice channel
             try:
-                self.vc = await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=True)   
+                self.players[guild_id] = {
+                    'vc': await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=True),
+                    'music_channel': ctx.channel,
+                    'user_list': [],
+                    'view': None,
+                    'view_message': None
+                }
+
+                # ? self.vc = await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=True)
             except AttributeError: # if the user is not connected to a voice channel
                 await ctx.send(embed=music_embed_generator('No estas conectado a un canal de voz'))
                 return
@@ -113,14 +148,25 @@ class Music(commands.Cog):
         
         # this makes the bot play the next song in the queue when the current one ends
         # and does not make any recommendations
-        self.vc.autoplay = wavelink.AutoPlayMode.partial
-        self.vc.inactive_timeout = 10
+        # ? self.vc.autoplay = wavelink.AutoPlayMode.partial
+        # ? self.vc.inactive_timeout = 10
+        vc = self.players[guild_id]['vc']
+        user_list = self.players[guild_id]['user_list']
+        # ? self.players[guild_id].vc.autoplay = wavelink.AutoPlayMode.partial
+        # ? self.players[guild_id].vc.inactive_timeout = 10
+        vc.autoplay = wavelink.AutoPlayMode.partial
+        vc.inactive_timeout = 10
 
-        if not self.music_channel:
-            self.music_channel = ctx.channel
-        elif self.music_channel != ctx.channel:
-            await ctx.send(embed=music_embed_generator(f'No puedes usar este comando en otro canal porque el bot ya está en uso en {self.music_channel.mention}'))
-            return
+        # ? if not self.music_channel:
+        # ?     self.music_channel = ctx.channel
+        # ? elif self.music_channel != ctx.channel:
+        # ?     await ctx.send(embed=music_embed_generator(f'No puedes usar este comando en otro canal porque el bot ya está en uso en {self.music_channel.mention}'))
+        # ?     return
+
+        # todo: perhaps this is not needed?
+        # if self.players[guild_id]['music_channel'] != ctx.channel:
+        #     await ctx.send(embed=music_embed_generator(f'No puedes usar este comando en otro canal porque el bot ya está en uso en {vc.music_channel.mention}'))
+        #     return
                 
         tracks: wavelink.Search = await wavelink.Playable.search(formated_query)
 
@@ -139,23 +185,30 @@ class Music(commands.Cog):
         }
         
         if isinstance(tracks, wavelink.Playlist):
-            added: int = await self.vc.queue.put_wait(tracks)
+            # ? added: int = await self.vc.queue.put_wait(tracks)
+            added: int = await vc.queue.put_wait(tracks)
             link = f'[{tracks.name}]({tracks.url})'
             # This codes adds the user object to the user_list multiple times
-            self.user_list.extend([user_object] * added) # the below code is the same as this one
+            # ? self.user_list.extend([user_object] * added) # the below code is the same as this one
+            user_list.extend([user_object] * added)
             # self.user_list.extend(user_object for _ in range(added))
             await ctx.send(embed=music_embed_generator(f'Playlist {link} (**{added}** songs) ha sido agregada a la cola'))
         else:
             track: wavelink.Playable = tracks[0]
-            await self.vc.queue.put_wait(track)
+            # ? await self.vc.queue.put_wait(track)
+            await vc.queue.put_wait(track)
             duration = format_time(track.length) if not track.is_stream else '🎙 live'
             description = f'Se ha agregado [{track.title}]({track.uri}) **[{duration}]** de `{track.author}`'
-            self.user_list.append(user_object)
+            # ? self.user_list.append(user_object)
+            user_list.append(user_object)
             await ctx.send(embed=music_embed_generator(description))
         
-        if not self.vc.playing:
-            self.vc = cast(wavelink.Player, ctx.voice_client)
-            await self.vc.play(self.vc.queue.get(), volume=100)
+        if not vc.playing:
+            # ? self.vc = cast(wavelink.Player, ctx.voice_client)
+            # ? await self.vc.play(self.vc.queue.get(), volume=100)
+            vc = cast(wavelink.Player, ctx.voice_client)
+            await vc.play(vc.queue.get(), volume=100)
+
             
     @commands.command(name='pause')
     async def pause(self, ctx):
