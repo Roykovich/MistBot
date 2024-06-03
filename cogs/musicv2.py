@@ -7,6 +7,7 @@ from utils.FormatTime import format_time
 from utils.RemoveAllItems import remove_all_items
 from utils.EmbedGenerator import music_embed_generator
 from utils.NowPlaying import now_playing
+from utils.VoiceChecker import check_voice_channel
 from views.MusicView import MusicView
 from views.PlaylistView import PlaylistView
 from settings import MUSIC_PASS as lavalink_password
@@ -29,13 +30,7 @@ class Music(commands.Cog):
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
     async def reset_player(self, id) -> None:
-        self.players[id] = {
-            'vc': None,
-            'music_channel': None,
-            'user_list': [],
-            'view': None,
-            'view_message': None
-        }
+        self.players.pop(str(id))
 
     ###############################
     # - - - - E V E N T S - - - - #
@@ -212,59 +207,57 @@ class Music(commands.Cog):
             
     @commands.command(name='pause')
     async def pause(self, ctx):
-        if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
+        await ctx.message.delete(delay=5)
+        if await check_voice_channel(ctx, self.players, paused=True):
             return
 
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
-            return
-        
-        if self.vc.paused:
-            await ctx.send(embed=music_embed_generator('El bot ya está en pausa'))
+        player = self.players[str(ctx.guild.id)]
+
+        if player['vc'].paused:
+            await ctx.send(embed=music_embed_generator('La canción ya está pausada'))
             return
 
-        await self.vc.pause(True)
-        self.view.children[2].label = 'Resumir'
-        self.view.children[2].emoji = '<:mb_resume:1244545666982744119>'
-        self.view.paused = True
+        await player['vc'].pause(True)
+        player['view'].children[2].label = 'Resumir'
+        player['view'].children[2].emoji = '<:mb_resume:1244545666982744119>'
+        player['view'].paused = True
+        await player['view_message'].edit(view=player['view'])
 
     @commands.command(name='resume')
     async def resume(self, ctx):
-        if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
-            return
-        
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
-            return
-        
-        if not self.vc.paused:
-            await ctx.send(embed=music_embed_generator('El bot ya está reproduciendo música'))
+        await ctx.message.delete(delay=5)
+        if await check_voice_channel(ctx, self.players, paused=True):
             return
 
-        await self.vc.pause(False)
-        self.view.children[2].label = 'Pausar'
-        self.view.children[2].emoji = '<:mb_pause:1244545668563861625>'
-        self.view.paused = False
+        player = self.players[str(ctx.guild.id)]
+
+        if not player['vc'].paused:
+            await ctx.send(embed=music_embed_generator('La canción ya está sonando'))
+            return
+
+        await player['vc'].pause(False)
+        player['view'].children[2].label = 'Pausar'
+        player['view'].children[2].emoji = '<:mb_pause:1244545668563861625>'
+        player['view'].paused = False
+        await player['view_message'].edit(view=player['view'])
 
     @commands.command(name='current')
     async def current(self, ctx):
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+        if await check_voice_channel(ctx, self.players):
             return
         
-        track = self.vc.current
-        current_position = format_time(int(self.vc.position))
+        vc = self.players[str(ctx.guild.id)]['vc']
+        user_list = self.players[str(ctx.guild.id)]['user_list']
+        track = vc.current
+        current_position = format_time(int(vc.position))
 
-        embed = now_playing(track, user=self.user_list[0] if self.user_list else None, current=True, position=current_position)
+        embed = now_playing(track, user=user_list[0] if user_list else None, current=True, position=current_position)
 
         await ctx.send(embed=embed)
 
     @commands.command(name='playlist')
     async def playlist(self, ctx):
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+        if await check_voice_channel(ctx, self.players):
             return
         
         view = PlaylistView(timeout=None)
@@ -274,12 +267,7 @@ class Music(commands.Cog):
     
     @commands.command(name='skip')
     async def skip(self, ctx):
-        if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
-            return
-        
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+        if await check_voice_channel(ctx, self.players):
             return
         
         if self.vc.queue.is_empty:
@@ -288,19 +276,14 @@ class Music(commands.Cog):
             await self.view_message.edit(view=self.view)            
             self.vc.queue.clear()
             await self.vc.stop()
-            await ctx.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
+            await ctx.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
             return
 
         await self.vc.play(self.vc.queue.get())
 
     @commands.command(name='stop')
     async def stop(self, ctx):
-        if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
-            return
-        
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+        if await check_voice_channel(ctx, self.players):
             return
         
         self.vc.queue.clear()
@@ -311,12 +294,7 @@ class Music(commands.Cog):
 
     @commands.command(name='disconnect')
     async def disconnect(self, ctx):
-        if ctx.author.voice.channel != self.vc.channel:
-            await ctx.send(embed=music_embed_generator('No estas en el mismo canal de voz que el bot'))
-            return
-        
-        if not self.vc:
-            await ctx.send(embed=music_embed_generator('No hay ninguna canción sonando en este momento'))
+        if await check_voice_channel(ctx, self.players):
             return
         
         self.vc.queue.clear()
