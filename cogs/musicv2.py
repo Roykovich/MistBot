@@ -37,7 +37,7 @@ class Music(commands.Cog):
     ###############################
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        print(f'\nNode [[ {payload.node.identifier} ]] is ready!')
+        print(f'\nNode {payload.node.identifier} is ready!')
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
