@@ -60,12 +60,9 @@ class MusicView(discord.ui.View):
     @discord.ui.button(label='Siguiente', emoji='<:mb_next:1244545662482255872>', row=1)
     async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.vc.queue.is_empty:
-            channel = self.vc.channel.mention
             self.clear_items()
             await interaction.response.edit_message(view=self)
-            self.vc.queue.clear()
             await self.vc.stop()
-            await interaction.channel.send(embed=music_embed_generator(f'🎼 La playlist termino. Bot desconectado de {channel} 👋'))
             return
         
         await self.vc.play(self.vc.queue.get())

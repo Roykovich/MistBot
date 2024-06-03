@@ -42,50 +42,58 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         track = payload.track
-        embed = now_playing(track, user=self.user_list[0] if self.user_list else None)
-        # self.user_list.pop(0)
-        self.players[str(payload.player.guild.id)]['user_list'].pop(0)
+        guild_id = str(payload.player.guild.id)
+        vc, music_channel, user_list = self.players[guild_id]['vc'], self.players[guild_id]['music_channel'], self.players[guild_id]['user_list']
+        # ? embed = now_playing(track, user=self.user_list[0] if self.user_list else None)
+        embed = now_playing(track, user=user_list[0] if user_list else None)
+        # ? self.user_list.pop(0)
+        user_list.pop(0)
 
         view_timeout = track.length / 1000 if not track.is_stream else None
         view = MusicView(timeout=view_timeout)
 
-        # view_message = await self.music_channel.send(embed=embed, view=view)
-        view_message = await self.players[str(payload.player.guild.id)]['music_channel'].send(embed=embed, view=view)
-        # view.vc = self.vc
-        view.vc = payload.player
-        # view.music_channel = self.music_channel
-        view.music_channel = self.players[str(payload.player.guild.id)]['music_channel']
-        # view.user_list = self.user_list
-        view.user_list = self.players[str(payload.player.guild.id)]['user_list']
+        # ? view_message = await self.music_channel.send(embed=embed, view=view)
+        view_message = await music_channel.send(embed=embed, view=view)
+        # ? view.vc = self.vc
+        view.vc = vc
+        # ? view.music_channel = self.music_channel
+        view.music_channel = music_channel
+        # ? view.user_list = self.user_list
+        view.user_list = user_list
         
-        # self.view_message = view_message
+        # ? self.view_message = view_message
         self.players[str(payload.player.guild.id)]['view_message'] = view_message
-        # self.view = view
+        # ? self.view = view
         self.players[str(payload.player.guild.id)]['view'] = view
         
         print(f'\n[+] Track started: {track.title}')
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
-        print(f'\n[+] Track ended: {payload.track.title}')
-        print(f'[!] reason: {payload.reason}')
+        print(f'\n[+] Track ended: {payload.track.title}\n[!] reason: {payload.reason}')
 
-        # remove_all_items(self.view)
-        remove_all_items(self.players[str(payload.player.guild.id)]['view'])
-        # await self.view_message.edit(view=self.view)
-        await self.players[str(payload.player.guild.id)]['view_message'].edit(view=self.players[str(payload.player.guild.id)]['view'])
+        guild_id = str(payload.player.guild.id)
+        vc = self.players[guild_id]['vc']
+        music_channel = self.players[guild_id]['music_channel']
+        view = self.players[guild_id]['view']
+        view_message = self.players[guild_id]['view_message']
+
+        # ? remove_all_items(self.view)
+        remove_all_items(view)
+        # ? await self.view_message.edit(view=self.view)
+        await view_message.edit(view=view)
         
-        # if self.vc.queue.is_empty and not self.vc.playing:
-        #     await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
-        if self.players[str(payload.player.guild.id)]['vc'].queue.is_empty and not self.players[str(payload.player.guild.id)]['vc'].playing:
-            await self.players[str(payload.player.guild.id)]['music_channel'].send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        # ? if self.vc.queue.is_empty and not self.vc.playing:
+        # ?    await self.music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        if vc.queue.is_empty and not vc.playing:
+            await music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
 
-        # if payload.reason == 'stopped':
-        #     await self.vc.disconnect(force=True)
-        #     await self.reset_player()
-        #     return
+        # ? if payload.reason == 'stopped':
+        # ?    await self.vc.disconnect(force=True)
+        # ?    await self.reset_player()
+        # ?    return
         if payload.reason == 'stopped':
-            await self.players[str(payload.player.guild.id)]['vc'].disconnect(force=True)
+            await vc.disconnect(force=True)
             await self.reset_player(payload.player.guild.id)
             return
 
@@ -270,38 +278,36 @@ class Music(commands.Cog):
         if await check_voice_channel(ctx, self.players):
             return
         
-        if self.vc.queue.is_empty:
-            channel = self.vc.channel.mention
-            remove_all_items(self.view)
-            await self.view_message.edit(view=self.view)            
-            self.vc.queue.clear()
-            await self.vc.stop()
-            await ctx.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        guild_id = str(ctx.guild.id)
+
+        if self.players[guild_id]['vc'].queue.is_empty:
+            remove_all_items(self.players[guild_id]['view'])
+            await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])           
+            await self.players[guild_id]['vc'].stop()
             return
 
-        await self.vc.play(self.vc.queue.get())
+        await self.players[guild_id]['vc'].play(self.players[guild_id]['vc'].queue.get())
 
     @commands.command(name='stop')
     async def stop(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
         
-        self.vc.queue.clear()
-        remove_all_items(self.view)
-        await self.view_message.edit(view=self.view)
-        await self.vc.stop()
-        await ctx.send(embed=music_embed_generator('Playlist detenida'))
+        guild_id = str(ctx.guild.id)
+        remove_all_items(self.players[guild_id]['view'])
+        await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
+        await self.players[guild_id]['vc'].stop()
 
     @commands.command(name='disconnect')
     async def disconnect(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
         
-        self.vc.queue.clear()
-        remove_all_items(self.view)
-        await self.view_message.edit(view=self.view)
-        await self.vc.disconnect(force=True)
-        await ctx.send(embed=music_embed_generator('Bot desconectado del canal de voz'))        
+        guild_id = str(ctx.guild.id)
+        remove_all_items(self.players[guild_id]['view'])
+        await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
+        await self.players[guild_id]['vc'].disconnect(force=True)
+        await ctx.send(embed=music_embed_generator('Bot desconectado del canal de voz.'))        
 
 async def setup(bot):
     music_bot = Music(bot)
