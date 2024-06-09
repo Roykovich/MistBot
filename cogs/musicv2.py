@@ -108,7 +108,7 @@ class Music(commands.Cog):
     ###################################
     # - - - - C O M M A N D S - - - - #
     ###################################
-    @commands.command(name='play')
+    @commands.command(name='play', description='Reproduce una pista o un link de YouTube, Spotify o Soundcloud.', brief='Reproduce una pista o video', aliases=['reproducir'])
     async def play(self, ctx, *query) -> None:
         # if no query is provided return
         if len(query) < 1:
@@ -213,7 +213,7 @@ class Music(commands.Cog):
             await vc.play(vc.queue.get(), volume=100)
 
             
-    @commands.command(name='pause')
+    @commands.command(name='pause', description='Pausa la pista actual.', brief='Pausa la pista actual', aliases=['pausar'])
     async def pause(self, ctx):
         await ctx.message.delete(delay=5)
         if await check_voice_channel(ctx, self.players, paused=True):
@@ -231,7 +231,7 @@ class Music(commands.Cog):
         player['view'].paused = True
         await player['view_message'].edit(view=player['view'])
 
-    @commands.command(name='resume')
+    @commands.command(name='resume', description='Reanuda la pista actual.', brief='Reanuda la pista actual', aliases=['resumir'])
     async def resume(self, ctx):
         await ctx.message.delete(delay=5)
         if await check_voice_channel(ctx, self.players, paused=True):
@@ -249,7 +249,7 @@ class Music(commands.Cog):
         player['view'].paused = False
         await player['view_message'].edit(view=player['view'])
 
-    @commands.command(name='current')
+    @commands.command(name='current', description='Muestra la pista actual.', brief='Muestra la pista actual', aliases=['actual'])
     async def current(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
@@ -263,7 +263,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='playlist')
+    @commands.command(name='playlist', description='Muestra la lista de reproducción.', brief='Muestra la lista de reproducción', aliases=['lista', 'queue'])
     async def playlist(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
@@ -273,7 +273,7 @@ class Music(commands.Cog):
         view.music_channel = self.music_channel
         await view.send()
     
-    @commands.command(name='skip')
+    @commands.command(name='skip', description='Salta la pista actual.', brief='Salta la pista actual', aliases=['saltar'])
     async def skip(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
@@ -288,7 +288,7 @@ class Music(commands.Cog):
 
         await self.players[guild_id]['vc'].play(self.players[guild_id]['vc'].queue.get())
 
-    @commands.command(name='stop')
+    @commands.command(name='stop', description='Detiene la reproducción.', brief='Detiene la reproducción', aliases=['detener'])
     async def stop(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
@@ -298,7 +298,7 @@ class Music(commands.Cog):
         await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
         await self.players[guild_id]['vc'].stop()
 
-    @commands.command(name='disconnect')
+    @commands.command(name='disconnect', description='Desconecta al bot del canal de voz.', brief='Desconecta al bot del canal de voz', aliases=['desconectar'])
     async def disconnect(self, ctx):
         if await check_voice_channel(ctx, self.players):
             return
