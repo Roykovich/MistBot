@@ -57,6 +57,7 @@ class Music(commands.Cog):
         view.vc = vc
         view.music_channel = music_channel
         view.user_list = user_list
+        view.lyrics = lyrics
         
         self.players[guild_id]['view_message'] = view_message
         self.players[guild_id]['view'] = view
@@ -284,7 +285,9 @@ class Music(commands.Cog):
 
     @commands.command(name='lyrics', description='Muestra la letra de la canción actual.', brief='Muestra la letra de la canción actual', aliases=['letra', 'letras'])
     async def lyrics(self, ctx):
-        ...
+        lyrics = self.players[str(ctx.guild.id)]['lyrics']
+
+        await ctx.send(embed=music_embed_generator(lyrics if lyrics else 'No se encontraron letras para esta canción'))
 
 async def setup(bot):
     music_bot = Music(bot)

@@ -37,7 +37,7 @@ class MusicView(discord.ui.View):
         await self.vc.seek(new_position)
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(label='Lista', emoji='📜', row=1)
+    @discord.ui.button(label='Lista', emoji='📀', row=1)
     async def playlist(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = PlaylistView(timeout=None)
         view.vc = self.vc
@@ -45,8 +45,12 @@ class MusicView(discord.ui.View):
         await view.send()
         await interaction.response.defer()
 
-    @discord.ui.button(label='Siguiente en lista', emoji='👀', row=1)
-    async def cual(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label='Letra', emoji='📜', row=1)
+    async def lyrics(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(embed=music_embed_generator(self.lyrics if self.lyrics else 'o se encontraron letras para esta canción'))
+
+    @discord.ui.button(label='Preview', emoji='👀', row=1)
+    async def preview(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.vc.queue.is_empty:
             await interaction.response.send_message(embed=music_embed_generator('No hay ninguna canción'), ephemeral=True)
             return
