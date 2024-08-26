@@ -12,6 +12,7 @@ from cogs.musicv2 import Music
 def main():
     intents = discord.Intents.default()
     intents.message_content = True
+    intents.voice_states = True
 
     # create the bot instance with prefix and intenst so far
     bot = commands.Bot(command_prefix='m!', intents=intents)
