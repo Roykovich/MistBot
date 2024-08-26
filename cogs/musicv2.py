@@ -1,7 +1,6 @@
 import discord
 import wavelink
 import datetime
-import requests
 from typing import cast
 from discord.ext import commands
 from utils.FormatTime import format_time
@@ -93,10 +92,29 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
-        print(f'\n[+] Player in guild: {player.guild.name} is inactive.')
+        print(f'[+] Player in guild: {player.guild.name} is inactive.')
         print(f'[+] Player disconnected from: {player.channel}')
         await player.disconnect(force=True)
         await self.reset_player(player.guild.id)
+        
+
+    @commands.Cog.listener('on_voice_state_update')
+    async def on_voice_state_update(self, member, before, after):
+        guild_id = str(member.guild.id)
+        if self.players.get(guild_id) is None:
+            return
+        
+        if self.players[guild_id].get('vc') is None:
+            return
+        
+        vc_channel = self.players[guild_id]["vc"].channel
+
+        print(f'[+] vc: {vc_channel} ({len(vc_channel.members)})')
+
+        if len(vc_channel.members) == 1:
+            print(f'[+] Player is alone in the voice channel')
+            print(f'[+] Player disconnected from: {vc_channel}')
+            await self.players[guild_id]['vc'].stop()
         
 
     ###################################
@@ -132,7 +150,8 @@ class Music(commands.Cog):
                     'music_channel': ctx.channel,
                     'user_list': [],
                     'view': None,
-                    'view_message': None
+                    'view_message': None,
+                    'lyrics': None,
                 }
             except AttributeError: # if the user is not connected to a voice channel
                 await ctx.send(embed=music_embed_generator('No estas conectado a un canal de voz'))
