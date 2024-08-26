@@ -1,6 +1,7 @@
 import discord
 import wavelink
 import datetime
+import requests
 from typing import cast
 from discord.ext import commands
 from utils.FormatTime import format_time
@@ -8,12 +9,15 @@ from utils.RemoveAllItems import remove_all_items
 from utils.EmbedGenerator import music_embed_generator
 from utils.NowPlaying import now_playing
 from utils.VoiceChecker import check_voice_channel
+from utils.VoiceChecker import check_voice_channel_v2
+from utils.GetLyrics import get_lyrics
 from views.MusicView import MusicView
 from views.PlaylistView import PlaylistView
 from settings import MUSIC_PASS as lavalink_password
 
 class Music(commands.Cog):
     players: dict = {}
+    session_id = None
     
     def __init__(self, bot):
         self.bot = bot
@@ -31,12 +35,18 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
         print(f'\nNode {payload.node.identifier} is ready!')
+        self.session_id = payload.session_id
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         track = payload.track
+
         guild_id = str(payload.player.guild.id)
-        vc, music_channel, user_list = self.players[guild_id]['vc'], self.players[guild_id]['music_channel'], self.players[guild_id]['user_list']
+        lyrics = get_lyrics(self.session_id, guild_id, lavalink_password)
+
+        vc = self.players[guild_id]['vc']
+        music_channel = self.players[guild_id]['music_channel']
+        user_list = self.players[guild_id]['user_list']
         embed = now_playing(track, user=user_list[0] if user_list else None)
         user_list.pop(0)
 
@@ -48,14 +58,20 @@ class Music(commands.Cog):
         view.music_channel = music_channel
         view.user_list = user_list
         
-        self.players[str(payload.player.guild.id)]['view_message'] = view_message
-        self.players[str(payload.player.guild.id)]['view'] = view
+        self.players[guild_id]['view_message'] = view_message
+        self.players[guild_id]['view'] = view
+        self.players[guild_id]['lyrics'] = lyrics
         
         print(f'\n[+] Track started: {track.title}')
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
-        print(f'\n[+] Track ended: {payload.track.title}\n[!] reason: {payload.reason}')
+        print(f'\n[+] Track ended: {payload.track.title}\n[!] reason: {payload.reason}\n')
+        
+        if payload.reason == 'loadFailed':
+            await payload.player.disconnect(force=True)
+            await self.reset_player(payload.player.guild.id)
+            return
 
         guild_id = str(payload.player.guild.id)
         vc = self.players[guild_id]['vc']
@@ -169,10 +185,11 @@ class Music(commands.Cog):
 
             
     @commands.command(name='pause', description='Pausa la pista actual.', brief='Pausa la pista actual', aliases=['pausar'])
+    @check_voice_channel_v2(players=players)
     async def pause(self, ctx):
         await ctx.message.delete(delay=5)
-        if await check_voice_channel(ctx, self.players, paused=True):
-            return
+        # if await check_voice_channel(ctx, self.players, paused=True):
+        #     return
 
         player = self.players[str(ctx.guild.id)]
 
@@ -187,10 +204,11 @@ class Music(commands.Cog):
         await player['view_message'].edit(view=player['view'])
 
     @commands.command(name='resume', description='Reanuda la pista actual.', brief='Reanuda la pista actual', aliases=['resumir'])
+    @check_voice_channel_v2(players=players)
     async def resume(self, ctx):
         await ctx.message.delete(delay=5)
-        if await check_voice_channel(ctx, self.players, paused=True):
-            return
+        # if await check_voice_channel(ctx, self.players, paused=True):
+        #     return
 
         player = self.players[str(ctx.guild.id)]
 
@@ -263,6 +281,10 @@ class Music(commands.Cog):
         await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
         await self.players[guild_id]['vc'].disconnect(force=True)
         await ctx.send(embed=music_embed_generator('Bot desconectado del canal de voz.'))        
+
+    @commands.command(name='lyrics', description='Muestra la letra de la canción actual.', brief='Muestra la letra de la canción actual', aliases=['letra', 'letras'])
+    async def lyrics(self, ctx):
+        ...
 
 async def setup(bot):
     music_bot = Music(bot)
