@@ -1,4 +1,8 @@
 import requests
+import deepl
+from settings import DEEPL_API_KEY
+
+Translator = deepl.Translator(DEEPL_API_KEY)
 
     # Hacer request al servidor local donde esta lavalink (127.0.0.1:2333) y seguir el path de lavalyrics
         # GET /v4/sessions/{sessionId}/players/{guildId}/track/lyrics?skipTrackSource={skipTrackSource}
@@ -10,6 +14,7 @@ import requests
         # formatear las letras de manera correcta
 
 def get_lyrics(session_id, guild_id, lavalink_password):
+    return
     # headers
     headers = {
         'Authorization': lavalink_password
@@ -24,6 +29,8 @@ def get_lyrics(session_id, guild_id, lavalink_password):
     lyrics = lyrics.json()
     # Si la fuente es YouTube la letra se encuentra en la llave 'text'
     if lyrics['sourceName'] == 'youtube':
+        translator_result = Translator.translate_text(lyrics['text'], target_lang='ES')
+        print(translator_result)
         return lyrics['text']
     # Si la fuente es Spotify la letra se encuentra en un array de objetos con la llave 'line'    
     if lyrics['sourceName'] == 'spotify':
@@ -31,4 +38,6 @@ def get_lyrics(session_id, guild_id, lavalink_password):
         for line in lyrics['lines']:
             lyrics_found += line['line'] + '\n'
 
+        translator_result = Translator.translate_text(lyrics_found, target_lang='ES')
+        print(translator_result)
         return lyrics_found

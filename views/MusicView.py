@@ -45,9 +45,10 @@ class MusicView(discord.ui.View):
         await view.send()
         await interaction.response.defer()
 
-    @discord.ui.button(label='Letra', emoji='📜', row=1)
-    async def lyrics(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(embed=music_embed_generator(self.lyrics if self.lyrics else 'o se encontraron letras para esta canción'))
+    # El emoji cuando desbloquees esta feature📜
+    @discord.ui.button(label='Letra', emoji='🔜', row=1)
+    async def lyrics(self, interaction: discord.Interaction, button: discord.ui.Button, disabled: bool=False):
+        await interaction.response.send_message(embed=music_embed_generator(self.lyrics if self.lyrics else 'No se encontraron letras para esta canción'))
 
     @discord.ui.button(label='Preview', emoji='👀', row=1)
     async def preview(self, interaction: discord.Interaction, button: discord.ui.Button):
