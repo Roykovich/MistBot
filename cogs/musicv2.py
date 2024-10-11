@@ -147,7 +147,7 @@ class Music(commands.Cog):
             try:
                 self.players[guild_id] = {
                     'vc': await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True, self_mute=True),
-                    'music_channel': ctx.channel,
+                    'music_channel': None,
                     'user_list': [],
                     'view': None,
                     'view_message': None,
@@ -167,6 +167,9 @@ class Music(commands.Cog):
         # and does not make any recommendations
         vc.autoplay = wavelink.AutoPlayMode.partial
         vc.inactive_timeout = 10
+
+        # Set the music channel, we make this change in order to send the music embed to the music channel
+        self.players[guild_id]['music_channel'] = ctx.channel
                 
         tracks: wavelink.Search = await wavelink.Playable.search(formated_query)
 
