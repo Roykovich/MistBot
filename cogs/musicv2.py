@@ -157,7 +157,7 @@ class Music(commands.Cog):
                 await ctx.send(embed=music_embed_generator('No estas conectado a un canal de voz'))
                 return
             except discord.ClientException: # if the bot can't connect to the voice channel
-                await ctx.send(embed=music_embed_generator('No me pude conectar a este canal de voz'))
+                await ctx.send(embed=music_embed_generator('No me pude conectar a este canal de voz. Revisa si tengo los **permisos** necesarios para entrar.'))
                 return
         
         vc = self.players[guild_id]['vc']
@@ -170,11 +170,14 @@ class Music(commands.Cog):
 
         # Set the music channel, we make this change in order to send the music embed to the music channel
         self.players[guild_id]['music_channel'] = ctx.channel
-                
+        
+        # search for the track
         tracks: wavelink.Search = await wavelink.Playable.search(formated_query)
 
+        # if no tracks are found return
         if not tracks:
-            await ctx.send(f'{ctx.author.mention} ninguna pista fue encontrada con: `{formated_query}`')
+            await ctx.send(embed=music_embed_generator(f'{ctx.author.mention} ninguna pista fue encontrada con: `{formated_query}`'))
+            return
 
         # This is the user object that will be added to the user_list
         # adding the user to the user_list is useful to display the user's name and avatar in the playlist view
