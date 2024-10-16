@@ -70,28 +70,33 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
         print(f'\n[+] Track ended: {payload.track.title}\n[!] reason: {payload.reason}\n')
-        
-        if payload.reason == 'loadFailed':
-            await payload.player.disconnect(force=True)
-            await self.reset_player(payload.player.guild.id)
-            return
 
         guild_id = str(payload.player.guild.id)
         vc = self.players[guild_id]['vc']
         music_channel = self.players[guild_id]['music_channel']
         view = self.players[guild_id]['view']
         view_message = self.players[guild_id]['view_message']
-
+        
         remove_all_items(view)
         await view_message.edit(view=view)
 
-        if vc.queue.is_empty and not vc.playing:
-            await music_channel.send(embed=music_embed_generator(f'🎼 La playlist termino.'))
+        if payload.reason == 'loadFailed':
+            if vc.queue.is_empty:
+                await payload.player.disconnect(force=True)
+                
+            await music_channel.send(embed=music_embed_generator(f'⚠️ Ha ocurrido un error al cargar la pista `{payload.track.title}`.'))
+            await self.reset_player(guild_id)
+            return
 
         if payload.reason == 'stopped':
             await vc.disconnect(force=True)
-            await self.reset_player(payload.player.guild.id)
+            await music_channel.send(embed=music_embed_generator('🛑 La reproducción ha sido detenida.'))
+            await self.reset_player(guild_id)
             return
+
+        if vc.queue.is_empty and not vc.playing:
+            await music_channel.send(embed=music_embed_generator(f'🎶 La playlist ha terminado.'))
+
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
