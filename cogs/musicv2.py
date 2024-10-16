@@ -26,6 +26,9 @@ class Music(commands.Cog):
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
     async def reset_player(self, id) -> None:
+        if not self.players.get(id): 
+            return
+        
         self.players.pop(str(id))
 
     ###############################
