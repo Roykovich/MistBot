@@ -4,7 +4,6 @@ import datetime
 from typing import cast
 from discord.ext import commands
 from utils.FormatTime import format_time
-from utils.RemoveAllItems import remove_all_items
 from utils.EmbedGenerator import music_embed_generator
 from utils.NowPlaying import now_playing
 from utils.VoiceChecker import check_voice_channel
@@ -77,7 +76,7 @@ class Music(commands.Cog):
         view = self.players[guild_id]['view']
         view_message = self.players[guild_id]['view_message']
         
-        remove_all_items(view)
+        view.clear_items()
         await view_message.edit(view=view)
 
         if payload.reason == 'loadFailed':
@@ -288,7 +287,7 @@ class Music(commands.Cog):
         guild_id = str(ctx.guild.id)
 
         if self.players[guild_id]['vc'].queue.is_empty:
-            remove_all_items(self.players[guild_id]['view'])
+            self.players[guild_id]['view'].clear_items()
             await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])           
             await self.players[guild_id]['vc'].stop()
             return
@@ -301,7 +300,7 @@ class Music(commands.Cog):
             return
         
         guild_id = str(ctx.guild.id)
-        remove_all_items(self.players[guild_id]['view'])
+        self.players[guild_id]['view'].clear_items()
         await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
         await self.players[guild_id]['vc'].stop()
 
@@ -311,7 +310,7 @@ class Music(commands.Cog):
             return
         
         guild_id = str(ctx.guild.id)
-        remove_all_items(self.players[guild_id]['view'])
+        self.players[guild_id]['view'].clear_items()
         await self.players[guild_id]['view_message'].edit(view=self.players[guild_id]['view'])
         await self.players[guild_id]['vc'].disconnect(force=True)
         await ctx.send(embed=music_embed_generator('Bot desconectado del canal de voz.'))        
