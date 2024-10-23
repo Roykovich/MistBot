@@ -25,9 +25,11 @@ class Music(commands.Cog):
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=100)
 
     async def reset_player(self, id) -> None:
-        if not self.players.get(id): 
+        if not self.players.get(str(id)): 
+            print(f'[+] Player with id: {id} does not exist')
             return
         
+        print(f'[+] Player with id: {id} has been reset')
         self.players.pop(str(id))
 
     ###############################
@@ -100,7 +102,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
         print(f'[+] Player in guild: {player.guild.name} is inactive.')
-        print(f'[+] Player disconnected from: {player.channel}')
+        print(f'[+] Player disconnected from: {player.channel}\n')
         await player.disconnect(force=True)
         await self.reset_player(player.guild.id)
         
