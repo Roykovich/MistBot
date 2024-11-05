@@ -205,12 +205,12 @@ class Music(commands.Cog):
             # This codes adds the user object to the user_list multiple times
             user_list.extend([user_object] * added)
             # self.user_list.extend(user_object for _ in range(added))
-            await ctx.send(embed=music_embed_generator(f'Playlist {link} (**{added}** songs) ha sido agregada a la cola'))
+            await ctx.send(embed=music_embed_generator(f'📜 Playlist {link} (**{added}** canciones) ha sido agregada a la cola'))
         else:
             track: wavelink.Playable = tracks[0]
             await vc.queue.put_wait(track)
             duration = format_time(track.length) if not track.is_stream else '🎙 live'
-            description = f'Se ha agregado [{track.title}]({track.uri}) **[{duration}]** de `{track.author}`'
+            description = f'💿 Se ha agregado [{track.title}]({track.uri}) **[{duration}]** de `{track.author}`'
             user_list.append(user_object)
             await ctx.send(embed=music_embed_generator(description))
         
@@ -233,7 +233,6 @@ class Music(commands.Cog):
             return
 
         await player['vc'].pause(True)
-        player['view'].children[2].label = 'Resumir'
         player['view'].children[2].emoji = '<:mb_resume:1244545666982744119>'
         player['view'].paused = True
         await player['view_message'].edit(view=player['view'])
@@ -252,7 +251,6 @@ class Music(commands.Cog):
             return
 
         await player['vc'].pause(False)
-        player['view'].children[2].label = 'Pausar'
         player['view'].children[2].emoji = '<:mb_pause:1244545668563861625>'
         player['view'].paused = False
         await player['view_message'].edit(view=player['view'])
