@@ -1,4 +1,5 @@
 import discord
+import wavelink
 from utils.EmbedGenerator import music_embed_generator
 from views.PlaylistView import PlaylistView
 from utils.FormatTime import format_time
@@ -17,9 +18,12 @@ class MusicView(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
 
-    @discord.ui.button(label='', emoji='<:mb_back:1244545665086914660>', disabled=True)
+    @discord.ui.button(label='', emoji='<:mb_back:1244545665086914660>')
     async def backward(self, interaction: discord.Interaction, button: discord.ui.Button):
-        ...
+        # el historial se borra al reiniciar el bot. 
+        # revisar como evitar eso
+        print(self.vc.queue.history)
+        await interaction.response.defer()
 
 
     # pausa y resumir
@@ -39,6 +43,10 @@ class MusicView(discord.ui.View):
             await interaction.response.edit_message(view=self)
             await self.vc.stop()
             return
+        
+        await self.vc.play(self.vc.queue.get())
+        self.clear_items()
+        await interaction.response.edit_message(view=self)
 
 
     # Para adelante
@@ -49,9 +57,13 @@ class MusicView(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
 
-    @discord.ui.button(label='', emoji='<:mb_loop:1244545660041297930>', row=1, disabled=True)
+    @discord.ui.button(label='', emoji='<:mb_loop:1244545660041297930>', row=1)
     async def loop(self, interaction: discord.Interaction, button: discord.ui.Button):
-        ...
+        print(self.vc.queue.mode)
+        self.vc.queue.mode = wavelink.QueueMode.loop if self.vc.queue.mode != wavelink.QueueMode.loop else wavelink.QueueMode.normal
+        self.children[5].style = discord.ButtonStyle.blurple if self.vc.queue.mode is wavelink.QueueMode.loop else discord.ButtonStyle.grey
+        print(self.vc.queue.mode)
+        await interaction.response.edit_message(view=self)
 
 
     @discord.ui.button(label='', emoji='<:mb_lyrics:1303142190154907658>', row=1, disabled=True)
@@ -76,9 +88,10 @@ class MusicView(discord.ui.View):
         await interaction.response.defer()
 
     
-    @discord.ui.button(label='', emoji='<:mb_shuffle:1244545660770979853>', row=1, disabled=True)
+    @discord.ui.button(label='', emoji='<:mb_shuffle:1244545660770979853>', row=1)
     async def shuffle(self, interaction: discord.Interaction, button: discord.ui.Button):
-        ...
+        self.vc.queue.shuffle()
+        await interaction.response.send_message(embed=music_embed_generator('<:mb_shuffle:1244545660770979853> playlist mezclada'))
 
     # @discord.ui.button(label='Preview', emoji='👀', row=1)
     # async def preview(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -92,7 +105,3 @@ class MusicView(discord.ui.View):
 
     #     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-
-        await self.vc.play(self.vc.queue.get())
-        self.clear_items()
-        await interaction.response.edit_message(view=self)
