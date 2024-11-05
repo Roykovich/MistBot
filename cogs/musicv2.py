@@ -51,7 +51,9 @@ class Music(commands.Cog):
         music_channel = self.players[guild_id]['music_channel']
         user_list = self.players[guild_id]['user_list']
         embed = now_playing(track, user=user_list[0] if user_list else None)
-        user_list.pop(0)
+        
+        if vc.queue.mode is not wavelink.QueueMode.loop:
+            user_list.pop(0)
 
         view_timeout = track.length / 1000 if not track.is_stream else None
         view = MusicView(timeout=view_timeout)
