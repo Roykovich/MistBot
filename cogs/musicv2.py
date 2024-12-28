@@ -15,6 +15,7 @@ from settings import MUSIC_PASS as lavalink_password
 
 class Music(commands.Cog):
     players: dict = {}
+    bigben: bool = False
     session_id = None
     
     def __init__(self, bot):
@@ -32,6 +33,17 @@ class Music(commands.Cog):
         print(f'[+] Player with id: {id} has been reset')
         self.players.pop(str(id))
 
+    async def export_players(self, id):
+        if not self.players.get(str(id)): 
+            print(f'[+] Player with id: {id} does not exist')
+            return
+        
+        return self.players.get(str(id))
+    
+    async def bigben_toggle(self):
+        self.bigben = not self.bigben
+        print(f'epale {self.bigben}')
+
     ###############################
     # - - - - E V E N T S - - - - #
     ############################### 
@@ -42,6 +54,8 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
+        if self.bigben: return
+
         track = payload.track
 
         guild_id = str(payload.player.guild.id)
@@ -72,6 +86,12 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackStartEventPayload) -> None:
+        if self.bigben:
+            if not str(payload.player.guild.id) in self.players:
+                await payload.player.disconnect(force=True)
+                return
+            return
+        
         print(f'\n[+] Track ended: {payload.track.title}\n[!] reason: {payload.reason}\n')
 
         guild_id = str(payload.player.guild.id)
