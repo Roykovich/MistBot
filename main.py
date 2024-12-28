@@ -29,7 +29,7 @@ def main():
                 
         bot.tree.copy_global_to(guild=settings.GUILD_ID)
         await bot.tree.sync(guild=settings.GUILD_ID)
-
+        
 
     @bot.event
     async def on_member_join(member: discord.member):
@@ -38,7 +38,6 @@ def main():
             await channel.send(f'Welcome aboard {member.mention}')
 
     bot.run(settings.TOKEN)
-
 
 if __name__ == '__main__':
     main()
