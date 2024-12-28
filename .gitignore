@@ -1,15 +1,17 @@
 leer.txt
 **.env
 /bot-env
+/bot
 **/__pycache__/
 *.pyc
 /cogs/test.py
 custom_reactions.db
+main.log
 
 # ignore lavalink files as logs or plugins and server
 /lavalink/logs
 /lavalink/plugins
 /lavalink/Lavalink.jar
 /lavalink/application.yaml
-
+/lavalink/mistbot.log
 
