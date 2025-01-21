@@ -10,7 +10,7 @@ from settings import GUILD_ID, ZOLOK_ID
 
 BIGBEN = "https://www.youtube.com/watch?v=vMA4_6yX3IM"
 
-zolok_time = datetime.time(hour=2, minute=0, tzinfo=datetime.timezone.utc)
+zolok_time = datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc)
 
 class Timers(commands.Cog):
     def __init__(self, bot) -> None:
