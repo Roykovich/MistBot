@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 from settings import GUILD_ID, ZOLOK_ID
 
 BIGBEN = "https://www.youtube.com/watch?v=vMA4_6yX3IM"
+ACE = "https://www.youtube.com/watch?v=80XAJKqRU9k"
 
 zolok_time = datetime.time(hour=1, minute=0, tzinfo=datetime.timezone.utc)
 
@@ -39,7 +40,7 @@ class Timers(commands.Cog):
             vc = await music.export_players(str(GUILD_ID.id))
 
             # we search for the sound we want to play at the given time
-            bigben: wavelink.Search = await wavelink.Playable.search(BIGBEN)
+            bigben: wavelink.Search = await wavelink.Playable.search(ACE)
             clock_track: wavelink.Playable = bigben[0]
 
             if not bigben:
@@ -55,7 +56,8 @@ class Timers(commands.Cog):
                     self_mute=True
                 )
                 vc = cast(wavelink.Player, guild.voice_client)
-                await vc.play(clock_track)
+                # Zolok es marico y ahora quiere que suena una cancion ahi de un momento a otro.
+                await vc.play(clock_track, start=171000, end=193000)
                 await asyncio.sleep((clock_track.length / 1000) + 1)
                 print((clock_track.length / 1000) + 1)
                 await music.bigben_toggle()
