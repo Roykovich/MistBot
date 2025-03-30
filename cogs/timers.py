@@ -58,7 +58,8 @@ class Timers(commands.Cog):
                 vc = cast(wavelink.Player, guild.voice_client)
                 # Zolok es marico y ahora quiere que suena una cancion ahi de un momento a otro.
                 await vc.play(clock_track, start=171000, end=193000)
-                await asyncio.sleep((clock_track.length / 1000) + 1)
+                # await asyncio.sleep((clock_track.length / 1000) + 1)
+                await asyncio.sleep(((193000 - 171000) / 1000) + 1)
                 print((clock_track.length / 1000) + 1)
                 await music.bigben_toggle()
                 return
@@ -80,8 +81,9 @@ class Timers(commands.Cog):
             # the bigben track and the skip/play the current song that will
             # start were it was left
             await music.bigben_toggle()
-            await vc.play(vc.queue.get(), paused=False)
-            await asyncio.sleep(clock_track.length / 1000)
+            await vc.play(vc.queue.get(), paused=False, start=171000, end=193000)
+            # await asyncio.sleep(clock_track.length / 1000)
+            await asyncio.sleep((193000 - 171000) / 1000)
             await music.bigben_toggle()
 
             if current_tract_status:
